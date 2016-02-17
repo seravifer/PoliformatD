@@ -12,7 +12,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
+import java.util.Map;
+import java.util.HashMap;
 
+import javafx.util.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,22 +25,19 @@ import org.jsoup.select.Elements;
 import net.lingala.zip4j.core.*;
 import net.lingala.zip4j.model.*;
 
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.*;
 
 /**
  * Api para PoliformaT de la UPV.
  *
- * @author Sergi Ávila
- * @version 0.1
- * @date 14/02/2016
+ * @author Sergi Avila
+ * @version 0.2
  */
 public class ApiPoliformat {
     
     private List<String> cookies;
     private HttpsURLConnection conn;
-    public String[][] asig = new String[10][3]; // Array con las asignaturas
+    public String[][] asig = new String[10][3];                             // Array con las asignaturas
+    private Map<String, Pair<String, String>> asignaturas = new HashMap<>();
     
     public static void main( String[] args ) throws Exception {
         
@@ -66,42 +66,12 @@ public class ApiPoliformat {
         // 4. Busca las asignaturas
         http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
 
-        http.control();                                         // Activa GUI
-
         //String n = input.nextLine();
         //int a = http.buscar(n);                               // Elegir asignatura a descargar
         
         // 5. Sincroniza los archivos
         //http.sync(a);
         
-    }
-    
-    public void control() {
-        JFrame mainFrame = new JFrame("PoliformaT");
-         mainFrame.setBounds(500,250,300,250);
-         mainFrame.setLayout(new GridLayout(3, 1));
-        
-        ActionListener listener = e -> {
-            if (e.getSource() instanceof JButton) {
-                String text = ((JButton) e.getSource()).getText();
-                try {
-                    int a = buscar(text);
-                    sync(a);
-                } catch(Exception u){
-                     u.printStackTrace();
-                }
-            }
-        };
-        
-        JButton[] array = new JButton[10];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = new JButton(asig[i][0]);
-            array[i].addActionListener(listener);
-            mainFrame.add(array[i]);
-        }
-        
-        mainFrame.setVisible(true); 
-        mainFrame.setResizable(false);
     }
     
     public String getPageContent(String url) throws Exception {
@@ -239,37 +209,23 @@ public class ApiPoliformat {
         // Busca los campos del formulario
         Element loginform = doc.getElementById("tab-dhtml-more-sites");
         Elements inputElements = loginform.getElementsByTag("option");
-        
-        int a=0;
+
         for (Element inputElement : inputElements) {
             String name = inputElement.text().toUpperCase();
             String oldName = inputElement.text();
             String key = inputElement.attr("value");
             if (key.startsWith("GRA")) {
-                asig[a][0] = name.substring(0, 3);
-                asig[a][1] = key;
-                asig[a][2] = oldName;
-                a++;
+                asignaturas.put(name.substring(0,3), new Pair<>(key, oldName));
             }
         }
 
-        // Muestro la lista de asiganturas
-        for(int i=0; i<asig.length; i++) {
-            if ( asig[i][0] != null )  {
-                System.out.println( asig[i][0] + " - " + asig[i][1] + " - " + asig[i][2] );
-            }
+        for(Map.Entry<String, Pair<String, String>> entry : asignaturas.entrySet()) {
+            System.out.println( entry.getKey() + " - " + entry.getValue().getKey() + " - " + entry.getValue().getValue());
         }
         
     }
-    
-    public int buscar(String asignatura) {
-        for(int i=0; i<asig.length; i++) {
-            if ( asig[i][0].equals(asignatura)) return i;
-        }
-        return -1;
-    }
        
-    public void sync( int n) throws Exception {
+    public void sync(int n) throws Exception {
 
         String name     = asig[n][0];
         String key      = asig[n][1];
