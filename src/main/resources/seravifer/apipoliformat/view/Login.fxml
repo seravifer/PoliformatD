@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane expanded="true" xmlns="http://javafx.com/javafx/null" xmlns:fx="http://javafx.com/fxml/1">
+   <header>
+      <AnchorPane prefHeight="100.0" prefWidth="200.0" />
+   </header>
+   <content>
+      <VBox prefHeight="200.0" prefWidth="100.0">
+         <children>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" />
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" />
+         </children>
+      </VBox>
+   </content>
+   <!--<buttonTypes>
+      <ButtonType fx:constant="CANCEL" />
+      <ButtonType fx:constant="YES" />
+   </buttonTypes>-->
+</DialogPane>

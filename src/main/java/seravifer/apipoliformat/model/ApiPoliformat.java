@@ -1,3 +1,5 @@
+package seravifer.apipoliformat.model;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
@@ -9,7 +11,6 @@ import java.net.CookieManager;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
-import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.jsoup.Jsoup;

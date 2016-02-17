@@ -1,3 +1,9 @@
+package seravifer.apipoliformat.model;
+
+import javafx.util.Pair;
+import seravifer.apipoliformat.utils.Utils;
+
+import java.io.File;
 import java.util.Scanner;
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -17,7 +23,9 @@ public class Main {
         
         // 1. Extrae la petecion de login
         String page = http.getPageContent(url);                 // Muestra el contenido en texto plano del HTML
-        
+
+        //Pair<String, String> loginResult = Utils.customDialogLogin(Main.class.getResource(".." + File.separator + "view" + File.separator + "Login.fxml"), new Pair<String, String>("", ""));
+
         System.out.print("DNI: ");
         String dni = input.nextLine();
         System.out.println();
