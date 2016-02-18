@@ -32,14 +32,14 @@ public class ApiPoliformat {
     private List<String> cookies;
     private HttpsURLConnection conn;
     private Map<String, Pair<String, String>> asignaturas = new HashMap<>(); // Lista de asignaturas
-    
+
     public static void main( String[] args ) throws Exception {
         
         String url = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
         String portal = "https://poliformat.upv.es/portal/tool/2cdd60e6-d777-4c10-a9da-45f76bc23d02/tab-dhtml-moresites";
         String dni = "";
         String pass = "";
-        
+
         ApiPoliformat http = new ApiPoliformat();               // Inicia conexion
 
         CookieHandler.setDefault(new CookieManager());          // Procesa las Cookies
@@ -47,7 +47,7 @@ public class ApiPoliformat {
         // 1. Extrae la petecion de login
         String page = http.getPageContent(url);                 // Muestra el contenido en texto plano del HTML
         String postParams = http.getFormParams(page, dni, pass);// Extrae la petion del texto plano
-        System.out.println(postParams);
+        //System.out.println(postParams);
 
         // 2. Manda las peticiones de login
         http.sendPost(postParams);
@@ -58,11 +58,11 @@ public class ApiPoliformat {
         // 4. Busca las asignaturas
         http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
         
-        // 5. Sincroniza los archivos
-        //http.sync("FOE");
+        // 5. Descargo la asignatura
+        //http.download("FOE");
         
     }
-    
+
     public String getPageContent(String url) throws Exception {
 
         URL link = new URL(url);
@@ -101,7 +101,7 @@ public class ApiPoliformat {
 
     public String getFormParams(String html, String username, String password) throws Exception {
         
-        System.out.println("Extrayendo datos del formulario...");
+        System.err.println("Extrayendo datos del formulario...");
         
         Document doc = Jsoup.parse(html);
 
@@ -161,11 +161,17 @@ public class ApiPoliformat {
         wr.writeBytes(postParams);
         wr.flush();
         wr.close();
+        //int responseCod = conn.getResponseCode();
+        //System.out.println("Respuesta : " + responseCod);
 
-        //int responseCode = conn.getResponseCode();
+        conn.setInstanceFollowRedirects(false);
+        conn.connect();
+        int responseCode = conn.getResponseCode();
+        System.out.println(responseCode);
+
         //System.out.println("\nEnviando petición 'POST' a URL : " + url);
         //System.out.println("Parametros POST : " + postParams); // id=c&estilo=500&vista=MSE&cua=sakai&dni={DNI}&clau={CONTRASEÑA}&=Entrar
-        //System.out.println("Respuesta : " + responseCode);
+
 
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         String inputLine;
@@ -188,39 +194,43 @@ public class ApiPoliformat {
     
     public void getAsignaturas(String html) throws Exception {
         
-        System.out.println("Extrayendo asignaturas...");
+        System.err.println("Extrayendo asignaturas...");
         
         Document doc = Jsoup.parse(html);
 
         // Busca los campos del formulario
-        Element loginform = doc.getElementById("tab-dhtml-more-sites");
-        Elements inputElements = loginform.getElementsByTag("option");
+        try {
+            Element loginform = doc.getElementById("tab-dhtml-more-sites");
+            Elements inputElements = loginform.getElementsByTag("option");
 
-        for (Element inputElement : inputElements) {
-            String name = inputElement.text().toUpperCase();
-            String oldName = inputElement.text();
-            String key = inputElement.attr("value");
-            if (key.startsWith("GRA")) {
-                asignaturas.put(name.substring(0,3), new Pair<>(key, oldName));
+            for (Element inputElement : inputElements) {
+                String name = inputElement.text().toUpperCase();
+                String oldName = inputElement.text();
+                String key = inputElement.attr("value");
+                if (key.startsWith("GRA")) {
+                    asignaturas.put(name.substring(0,3), new Pair<>(key, oldName));
+                }
             }
+
+            for(Map.Entry<String, Pair<String, String>> entry : asignaturas.entrySet()) {
+                System.err.println( entry.getKey() + " - " + entry.getValue().getKey() + " - " + entry.getValue().getValue());
+            }
+        } catch (NullPointerException e) {
+            System.out.println("DNI o contraseña incorrectas");
         }
 
-        for(Map.Entry<String, Pair<String, String>> entry : asignaturas.entrySet()) {
-            System.out.println( entry.getKey() + " - " + entry.getValue().getKey() + " - " + entry.getValue().getValue());
-        }
-        
     }
        
-    public void sync(String n) throws Exception {
+    public void download(String n) throws Exception {
 
-        String name     = n; // Key Hasmap
-        String key      = asignaturas.get(n).getKey(); // Key
-        String oldName  = asignaturas.get(n).getValue();
+        String name     = n;                                // Key - Nombre de la asignatura
+        String key      = asignaturas.get(n).getKey();      // ValueKey - Referencia de la asignatura
+        String oldName  = asignaturas.get(n).getValue();    //ValueValue - Nombre orignal de la asignatura
         String path     = System.getProperty("user.dir") + File.separator;
         
         // Descargar zip
         URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/" + key + "/&siteId="+ key);
-        System.out.println("Descargando: " + url);
+        System.out.println("Descargando asignatura...");
         
         InputStream in = url.openStream();
         FileOutputStream fos = new FileOutputStream(new File(name + ".zip"));
@@ -241,7 +251,7 @@ public class ApiPoliformat {
         List<FileHeader> fileHeaders;
         fileHeaders = zipFile.getFileHeaders();
         for(FileHeader fileHeader : fileHeaders) {
-            System.out.println(fileHeader.getFileName());
+            System.err.println(fileHeader.getFileName());
             String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "");
             zipFile.extractFile(fileHeader, path, null, goodName);
         }
@@ -255,7 +265,7 @@ public class ApiPoliformat {
         File newDir = new File( dir.getParent() + File.separator + name );
         dir.renameTo(newDir);
         
-        System.out.println("Completado");
+        System.out.println("Completado!");
         
     }
 
