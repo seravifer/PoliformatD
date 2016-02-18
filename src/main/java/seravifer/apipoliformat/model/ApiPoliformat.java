@@ -1,21 +1,16 @@
 package seravifer.apipoliformat.model;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
-import javax.net.ssl.HttpsURLConnection;
 import java.util.Map;
 import java.util.HashMap;
-
 import javafx.util.Pair;
+import javax.net.ssl.HttpsURLConnection;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -36,12 +31,9 @@ public class ApiPoliformat {
     
     private List<String> cookies;
     private HttpsURLConnection conn;
-    public String[][] asig = new String[10][3];                             // Array con las asignaturas
-    private Map<String, Pair<String, String>> asignaturas = new HashMap<>();
+    private Map<String, Pair<String, String>> asignaturas = new HashMap<>(); // Lista de asignaturas
     
     public static void main( String[] args ) throws Exception {
-        
-        //Scanner input = new Scanner( System.in );
         
         String url = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
         String portal = "https://poliformat.upv.es/portal/tool/2cdd60e6-d777-4c10-a9da-45f76bc23d02/tab-dhtml-moresites";
@@ -65,12 +57,9 @@ public class ApiPoliformat {
 
         // 4. Busca las asignaturas
         http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
-
-        //String n = input.nextLine();
-        //int a = http.buscar(n);                               // Elegir asignatura a descargar
         
         // 5. Sincroniza los archivos
-        //http.sync(a);
+        //http.sync("FOE");
         
     }
     
@@ -137,7 +126,6 @@ public class ApiPoliformat {
 
         }
 
-
         return log.toString();
         //return result.toString(); // Imprime la los parametros de acceso
         
@@ -145,7 +133,7 @@ public class ApiPoliformat {
     
     public void sendPost(String postParams) throws Exception {
 
-        System.out.println("Logueando...");
+        System.err.println("Logueando...");
 
         URL link = new URL("https://www.upv.es/exp/aute_intranet");
         conn = (HttpsURLConnection) link.openConnection();
@@ -188,8 +176,6 @@ public class ApiPoliformat {
         }
         in.close();
 
-        //System.out.println(response.toString());
-
     }
     
     public List<String> getCookies() {
@@ -225,12 +211,12 @@ public class ApiPoliformat {
         
     }
        
-    public void sync(int n) throws Exception {
+    public void sync(String n) throws Exception {
 
-        String name     = asig[n][0];
-        String key      = asig[n][1];
-        String oldName  = asig[n][2];
-        String path     = new File( "." ).getCanonicalPath() + "\\";
+        String name     = n; // Key Hasmap
+        String key      = asignaturas.get(n).getKey(); // Key
+        String oldName  = asignaturas.get(n).getValue();
+        String path     = System.getProperty("user.dir") + File.separator;
         
         // Descargar zip
         URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/" + key + "/&siteId="+ key);
@@ -259,15 +245,14 @@ public class ApiPoliformat {
             String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "");
             zipFile.extractFile(fileHeader, path, null, goodName);
         }
-        
-        
+
         // Eliminar zip
         File file = new File( path + name + ".zip" );
         file.delete();
         
         // Cambiar nombre carpeta extraida
-        File dir = new File( path + oldName + "\\" );
-        File newDir = new File( dir.getParent() + "/" + name );
+        File dir = new File( path + oldName + File.separator );
+        File newDir = new File( dir.getParent() + File.separator + name );
         dir.renameTo(newDir);
         
         System.out.println("Completado");

@@ -42,26 +42,8 @@ public class Main {
         // 3. Accede a PoliformaT
         String result = http.getPageContent(portal);            // Muestra el contenido en texto plano del HTML
         //System.out.println(result);
-        
-        System.out.print("Asignaturas: \n");
+
         // 4. Busca las asignaturas
         http.getAsignaturas(result);               // Extrae el nombre de las asignaturas
-        boolean run = true;
-        while(run) {
-            System.out.println("¿Que asigantura quieres descargar?");
-            String n = input.nextLine();
-    
-            if ( n.equals("STOP") ) {
-                run = false;
-                System.out.println("Adios");
-            } else {
-            int a = http.buscar(n);                               // Elegir asignatura a descargar
-        
-            // 5. Sincroniza los archivos
-            http.sync(a);
-        
-            System.out.println("Completado!");
-        }
-        }
     }
 }
