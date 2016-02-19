@@ -1,23 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
 <?import java.lang.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<DialogPane expanded="true" xmlns="http://javafx.com/javafx/null" xmlns:fx="http://javafx.com/fxml/1">
+<DialogPane expanded="true" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
    <header>
-      <AnchorPane prefHeight="100.0" prefWidth="200.0" />
+      <AnchorPane prefHeight="50.0" prefWidth="200.0">
+         <children>
+            <Label layoutX="14.0" layoutY="13.0" text="Login a la Intranet" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="68.0">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+         </children></AnchorPane>
    </header>
    <content>
-      <VBox prefHeight="200.0" prefWidth="100.0">
+      <VBox prefHeight="100.0" prefWidth="100.0">
          <children>
-            <AnchorPane prefHeight="200.0" prefWidth="200.0" />
-            <AnchorPane prefHeight="200.0" prefWidth="200.0" />
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label text="DNI: " />
+                  <PasswordField />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label text="PIN: " />
+                  <PasswordField />
+               </children>
+            </HBox>
          </children>
       </VBox>
    </content>
-   <!--<buttonTypes>
-      <ButtonType fx:constant="CANCEL" />
-      <ButtonType fx:constant="YES" />
-   </buttonTypes>-->
 </DialogPane>

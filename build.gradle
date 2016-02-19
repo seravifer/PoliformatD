@@ -2,8 +2,10 @@ group 'seravifer.apipoliformat'
 version '0.2'
 
 apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'application'
 
-sourceCompatibility = 1.5
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -12,5 +14,17 @@ repositories {
 dependencies {
     compile 'org.jsoup:jsoup:1.8.3'
     compile 'net.lingala.zip4j:zip4j:1.3.2'
-    compile 'org.apache.commons:commons-lang3:3.4'
+}
+
+distZip.shouldRunAfter(build)
+
+mainClassName = "seravifer.apipoliformat.Main"
+jar {
+    archivesBaseName = 'Api-PoliformaT'
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                'Class-Path': configurations.runtime.files.collect { "$it.name" }.join(' ')
+    }
 }

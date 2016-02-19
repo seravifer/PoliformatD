@@ -9,14 +9,15 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import seravifer.apipoliformat.model.ApiPoliformat;
 import seravifer.apipoliformat.utils.Reference;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.Set;
+import java.io.*;
+import java.nio.file.Paths;
 
 /**
  * Controller for Window.fxml
@@ -28,6 +29,8 @@ public class WindowController {
     private AnchorPane root;
     private ObservableList<String> choiceList;
 
+    private ApiPoliformat api;
+
     @FXML
     private ChoiceBox<String> box;
 
@@ -37,7 +40,10 @@ public class WindowController {
     @FXML
     private TextArea txtConsole;
 
-    public WindowController(Set<String> keySet, Stage stage) {
+    @FXML
+    private ImageView logo;
+
+    public WindowController(ApiPoliformat api, Stage stage) {
         this.stage = stage;
         FXMLLoader loader = new FXMLLoader(getClass().getResource(Reference.VIEW_PATH + "Window.fxml"));
         loader.setController(this);
@@ -48,7 +54,9 @@ public class WindowController {
         }
         this.stage.setScene(new Scene(root));
 
-        choiceList = FXCollections.observableArrayList(keySet);
+        this.api = api;
+
+        choiceList = FXCollections.observableArrayList(api.getAsignaturas().keySet());
     }
 
     @FXML
@@ -60,12 +68,18 @@ public class WindowController {
             }
         }));
 
+        //logo.setImage();
         box.setItems(choiceList);
     }
 
     @FXML
     private void downloadHandler(ActionEvent event) {
-        box.getSelectionModel().getSelectedItem();
+        try {
+            api.download(box.getSelectionModel().getSelectedItem());
+        } catch (Exception e) {
+            System.err.println("Error descargando los archivos.");
+            e.printStackTrace();
+        }
     }
 
     public void show() {

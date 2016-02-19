@@ -19,6 +19,7 @@ import org.jsoup.select.Elements;
 //import net.lingala.zip4j.exception.*;
 import net.lingala.zip4j.core.*;
 import net.lingala.zip4j.model.*;
+import seravifer.apipoliformat.utils.Reference;
 
 
 /**
@@ -28,39 +29,34 @@ import net.lingala.zip4j.model.*;
  * @version 0.2
  */
 public class ApiPoliformat {
-    
+    public static int attemps = 0;
+
     private List<String> cookies;
     private HttpsURLConnection conn;
-    private Map<String, Pair<String, String>> asignaturas = new HashMap<>(); // Lista de asignaturas
+    private Map<String, Pair<String, String>> asignaturas; // Lista de asignaturas
 
-    public static void main( String[] args ) throws Exception {
-        
-        String url = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
-        String portal = "https://poliformat.upv.es/portal/tool/2cdd60e6-d777-4c10-a9da-45f76bc23d02/tab-dhtml-moresites";
-        String dni = "";
-        String pass = "";
-
-        ApiPoliformat http = new ApiPoliformat();               // Inicia conexion
+    public ApiPoliformat(String dni, String pin) throws Exception {
+        asignaturas = new HashMap<>();
 
         CookieHandler.setDefault(new CookieManager());          // Procesa las Cookies
-        
+
         // 1. Extrae la petecion de login
-        String page = http.getPageContent(url);                 // Muestra el contenido en texto plano del HTML
-        String postParams = http.getFormParams(page, dni, pass);// Extrae la petion del texto plano
-        //System.out.println(postParams);
+        String page = getPageContent(Reference.LOGIN_INTRANET);                 // Muestra el contenido en texto plano del HTML
+        String postParams = getFormParams(page, dni, pin);// Extrae la petion del texto plano
+        System.out.println(postParams);
 
         // 2. Manda las peticiones de login
-        http.sendPost(postParams);
+        sendPost(postParams);
 
         // 3. Accede a PoliformaT
-        String result = http.getPageContent(portal);            // Muestra el contenido en texto plano del HTML
+        String result = getPageContent(Reference.ASIGNATURAS_POLIFORMAT);            // Muestra el contenido en texto plano del HTML
 
         // 4. Busca las asignaturas
-        http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
-        
-        // 5. Descargo la asignatura
-        //http.download("FOE");
-        
+        getAsignaturas(result);                            // Extrae el nombre de las asignaturas
+    }
+
+    public ApiPoliformat() {
+        asignaturas = new HashMap<>();
     }
 
     public String getPageContent(String url) throws Exception {
@@ -223,7 +219,6 @@ public class ApiPoliformat {
        
     public void download(String n) throws Exception {
 
-        String name     = n;                                // Key - Nombre de la asignatura
         String key      = asignaturas.get(n).getKey();      // ValueKey - Referencia de la asignatura
         String oldName  = asignaturas.get(n).getValue();    //ValueValue - Nombre orignal de la asignatura
         String path     = System.getProperty("user.dir") + File.separator;
@@ -233,7 +228,7 @@ public class ApiPoliformat {
         System.out.println("Descargando asignatura...");
         
         InputStream in = url.openStream();
-        FileOutputStream fos = new FileOutputStream(new File(name + ".zip"));
+        FileOutputStream fos = new FileOutputStream(new File(n + ".zip"));
 
         int length;
         byte[] buffer = new byte[1024];
@@ -244,7 +239,7 @@ public class ApiPoliformat {
         in.close();
         
         //Extraer archivos del zip
-        ZipFile zipFile = new ZipFile( path + name + ".zip" );
+        ZipFile zipFile = new ZipFile( path + n + ".zip" );
         zipFile.setFileNameCharset("UTF-8");
 
         @SuppressWarnings("unchecked")
@@ -257,16 +252,50 @@ public class ApiPoliformat {
         }
 
         // Eliminar zip
-        File file = new File( path + name + ".zip" );
+        File file = new File( path + n + ".zip" );
         file.delete();
         
         // Cambiar nombre carpeta extraida
         File dir = new File( path + oldName + File.separator );
-        File newDir = new File( dir.getParent() + File.separator + name );
+        File newDir = new File( dir.getParent() + File.separator + n);
         dir.renameTo(newDir);
         
         System.out.println("Completado!");
         
+    }
+
+    public Map<String, Pair<String, String>> getAsignaturas() {
+        return asignaturas;
+    }
+
+    public static void main( String[] args ) throws Exception {
+
+        String url = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
+        String portal = "https://poliformat.upv.es/portal/tool/2cdd60e6-d777-4c10-a9da-45f76bc23d02/tab-dhtml-moresites";
+        String dni = "";
+        String pass = "";
+
+        ApiPoliformat http = new ApiPoliformat();               // Inicia conexion
+
+        CookieHandler.setDefault(new CookieManager());          // Procesa las Cookies
+
+        // 1. Extrae la petecion de login
+        String page = http.getPageContent(url);                 // Muestra el contenido en texto plano del HTML
+        String postParams = http.getFormParams(page, dni, pass);// Extrae la petion del texto plano
+        //System.out.println(postParams);
+
+        // 2. Manda las peticiones de login
+        http.sendPost(postParams);
+
+        // 3. Accede a PoliformaT
+        String result = http.getPageContent(portal);            // Muestra el contenido en texto plano del HTML
+
+        // 4. Busca las asignaturas
+        http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
+
+        // 5. Descargo la asignatura
+        //http.download("FOE");
+
     }
 
 }
