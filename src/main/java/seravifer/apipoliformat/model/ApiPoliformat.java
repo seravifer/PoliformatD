@@ -16,9 +16,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-//import net.lingala.zip4j.exception.*;
+import net.lingala.zip4j.exception.*;
 import net.lingala.zip4j.core.*;
 import net.lingala.zip4j.model.*;
+
 import seravifer.apipoliformat.utils.Reference;
 
 
@@ -78,10 +79,6 @@ public class ApiPoliformat {
                 conn.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
             }
         }
-        
-        //int responseCode = conn.getResponseCode();
-        //System.out.println("\nEnviando petición 'GET' a URL : " + url);
-        //System.out.println("Respuesta : " + responseCode);
 
         BufferedReader in =  new BufferedReader(new InputStreamReader(conn.getInputStream()));
         String inputLine;
@@ -160,26 +157,7 @@ public class ApiPoliformat {
         wr.writeBytes(postParams);
         wr.flush();
         wr.close();
-        int responseCod = conn.getResponseCode();
-        System.out.println("Respuesta : " + responseCod);
-
-        conn.setInstanceFollowRedirects(false);
-        conn.connect();
-        int responseCode = conn.getResponseCode();
-        System.out.println(responseCode);
-
-        //System.out.println("\nEnviando petición 'POST' a URL : " + url);
-        //System.out.println("Parametros POST : " + postParams); // id=c&estilo=500&vista=MSE&cua=sakai&dni={DNI}&clau={CONTRASEÑA}&=Entrar
-
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
+        new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
     }
     
@@ -220,7 +198,7 @@ public class ApiPoliformat {
 
     }
        
-    public void download(String n) throws Exception {
+    public void download(String n) throws IOException, ZipException {
 
         String key      = asignaturas.get(n).getKey();      // ValueKey - Referencia de la asignatura
         String oldName  = asignaturas.get(n).getValue();    // ValueValue - Nombre orignal de la asignatura
