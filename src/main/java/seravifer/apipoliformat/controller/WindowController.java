@@ -59,7 +59,12 @@ public class WindowController {
 
         this.api = api;
 
-        box.setItems(FXCollections.observableArrayList(api.getAsignaturas().keySet()));
+        this.stage.setTitle("PoliFormaT");
+
+        this.stage.setResizable(false);
+
+        box.setItems(FXCollections.observableArrayList(api.getSubjects().keySet()));
+
     }
 
     @FXML
@@ -83,6 +88,7 @@ public class WindowController {
                         try {
                             api.download(box.getSelectionModel().getSelectedItem());
                         } catch (IOException | ZipException e) {
+                            System.out.println("Algo ha fallado");
                             Platform.runLater(() -> downloadBtn.setDisable(false));
                             e.printStackTrace();
                         }
@@ -100,7 +106,7 @@ public class WindowController {
             downloadService.reset();
             downloadService.start();
         } catch (Exception e) {
-            System.err.println("Error descargando los archivos.");
+            System.err.println("Error descargando los archivos");
             e.printStackTrace();
         }
     }

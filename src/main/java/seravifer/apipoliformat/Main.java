@@ -21,7 +21,7 @@ public class Main extends Application{
                 if(data.getKey().equals("")) { System.exit(0); }
                 http = new ApiPoliformat(data.getKey(), data.getValue());
             }
-        } while ((http != null ? http.getAsignaturas().isEmpty() : true) && ApiPoliformat.attemps < 5);
+        } while ((http != null ? http.getSubjects().isEmpty() : true) && ApiPoliformat.attemps < 5);
 
         WindowController windowController = new WindowController(http, primaryStage);
         windowController.show();

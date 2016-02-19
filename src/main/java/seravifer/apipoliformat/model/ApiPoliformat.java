@@ -25,19 +25,17 @@ import seravifer.apipoliformat.utils.Reference;
 
 /**
  * Api para PoliformaT de la UPV.
- *
- * @author Sergi Avila
- * @version 0.2
+ * Created by Sergi Avila on 19/02/2016.
  */
 public class ApiPoliformat {
     public static int attemps = 0;
 
     private List<String> cookies;
     private HttpsURLConnection conn;
-    private Map<String, Pair<String, String>> asignaturas; // Lista de asignaturas
+    private Map<String, Pair<String, String>> subjects; // Lista de subjects
 
     public ApiPoliformat(String dni, String pin) throws Exception {
-        asignaturas = new HashMap<>();
+        subjects = new HashMap<>();
         if(dni.length() == 8) {
             attemps++;
         }
@@ -47,20 +45,18 @@ public class ApiPoliformat {
         // 1. Extrae la petecion de login
         String page = getPageContent(Reference.LOGIN_INTRANET);                 // Muestra el contenido en texto plano del HTML
         String postParams = getFormParams(page, dni, pin);                      // Extrae la petion del texto plano
-        System.out.println(postParams);
+        //System.out.println(postParams);
 
         // 2. Manda las peticiones de login
         sendPost(postParams);
 
-        // 3. Accede a PoliformaT
-        String result = getPageContent(Reference.ASIGNATURAS_POLIFORMAT);       // Muestra el contenido en texto plano del HTML
+        // 3. Busca las asignaturas
+        getAsignaturas();
 
-        // 4. Busca las asignaturas
-        getAsignaturas(result);                                                 // Extrae el nombre de las asignaturas
     }
 
     public ApiPoliformat() {
-        asignaturas = new HashMap<>();
+        subjects = new HashMap<>();
     }
 
     public String getPageContent(String url) throws Exception {
@@ -100,6 +96,7 @@ public class ApiPoliformat {
         System.err.println("Extrayendo datos del formulario...");
         
         Document doc = Jsoup.parse(html);
+        //Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
         // Busca los campos del formulario
         Element loginForm = doc.getElementById("pagina");
@@ -123,7 +120,6 @@ public class ApiPoliformat {
         }
 
         return log.toString();
-        //return result.toString(); // Imprime la los parametros de acceso
         
     }
     
@@ -169,29 +165,29 @@ public class ApiPoliformat {
         this.cookies = cookies;
     }
     
-    public void getAsignaturas(String html) throws Exception {
+    public void getAsignaturas() throws Exception {
         
-        System.err.println("Extrayendo asignaturas...");
-        
-        Document doc = Jsoup.parse(html);
+        System.err.println("Extrayendo subjects...");
+        Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
         // Busca los campos del formulario
         try {
-            Element loginform = doc.getElementById("tab-dhtml-more-sites");
-            Elements inputElements = loginform.getElementsByTag("option");
+            Elements inputElements = doc.getElementsByClass("upv_enlace");
 
             for (Element inputElement : inputElements) {
-                String name = inputElement.text().toUpperCase();
-                String oldName = inputElement.text();
-                String key = inputElement.attr("value");
-                if (key.startsWith("GRA")) {
-                    asignaturas.put(name.substring(0,3), new Pair<>(key, oldName));
-                }
+
+                String oldName = inputElement.ownText();
+                String name = oldName.substring(0, oldName.length()-2);
+                String key = inputElement.getElementsByTag("span").text().substring(1,6);
+
+                subjects.put(name, new Pair<>(key, null));
+
             }
 
-            for(Map.Entry<String, Pair<String, String>> entry : asignaturas.entrySet()) {
-                System.err.println( entry.getKey() + " - " + entry.getValue().getKey() + " - " + entry.getValue().getValue());
+            for(Map.Entry<String, Pair<String, String>> entry : subjects.entrySet()) {
+                System.err.println( entry.getKey() + " - " + entry.getValue().getKey());
             }
+
         } catch (NullPointerException e) {
             System.out.println("DNI o contraseña incorrectas");
         }
@@ -200,12 +196,15 @@ public class ApiPoliformat {
        
     public void download(String n) throws IOException, ZipException {
 
-        String key      = asignaturas.get(n).getKey();      // ValueKey - Referencia de la asignatura
-        String oldName  = asignaturas.get(n).getValue();    // ValueValue - Nombre orignal de la asignatura
+        String key      = subjects.get(n).getKey();      // ValueKey - Referencia de la asignatura
+        //String oldName  = subjects.get(n).getValue();    // ValueValue - Nombre orignal de la asignatura
         String path     = System.getProperty("user.dir") + File.separator;
         
         // Descargar zip
-        URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/" + key + "/&siteId="+ key);
+        URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_" + key + "_2015/&siteId=GRA_"+ key + "_2015");
+        System.err.println(url);
+        //https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_11546_2015/&siteId=GRA_11546_2015
+        //https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_11538_2015/&siteId=11538_2015
         System.out.println("Descargando asignatura...");
         
         InputStream in = url.openStream();
@@ -228,7 +227,7 @@ public class ApiPoliformat {
         fileHeaders = zipFile.getFileHeaders();
         for(FileHeader fileHeader : fileHeaders) {
             System.err.println(fileHeader.getFileName());
-            String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "");
+            String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "").replace("\"", "");
             zipFile.extractFile(fileHeader, path, null, goodName);
         }
 
@@ -237,22 +236,21 @@ public class ApiPoliformat {
         file.delete();
         
         // Cambiar nombre carpeta extraida
-        File dir = new File( path + oldName + File.separator );
-        File newDir = new File( dir.getParent() + File.separator + n);
-        dir.renameTo(newDir);
+        //File dir = new File( path + oldName + File.separator );
+        //File newDir = new File( dir.getParent() + File.separator + n);
+        //dir.renameTo(newDir);
         
         System.out.println("Completado!");
         
     }
 
-    public Map<String, Pair<String, String>> getAsignaturas() {
-        return asignaturas;
+    public Map<String, Pair<String, String>> getSubjects() {
+        return subjects;
     }
 
     public static void main( String[] args ) throws Exception {
 
         String url = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
-        String portal = "https://poliformat.upv.es/portal/tool/2cdd60e6-d777-4c10-a9da-45f76bc23d02/tab-dhtml-moresites";
         String dni = "";
         String pass = "";
 
@@ -268,14 +266,11 @@ public class ApiPoliformat {
         // 2. Manda las peticiones de login
         http.sendPost(postParams);
 
-        // 3. Accede a PoliformaT
-        String result = http.getPageContent(portal);            // Muestra el contenido en texto plano del HTML
+        // 3. Busca las asignaturas
+        http.getAsignaturas();                            // Extrae el nombre de las subjects
 
-        // 4. Busca las asignaturas
-        http.getAsignaturas(result);                            // Extrae el nombre de las asignaturas
-
-        // 5. Descargo la asignatura
-        //http.download("FOE");
+        // 4. Descargo la asignatura
+        http.download("Introducción a la informática y a la programación");
 
     }
 
