@@ -41,21 +41,21 @@ public class ApiPoliformat {
             attemps++;
         }
 
-        CookieHandler.setDefault(new CookieManager());          // Procesa las Cookies
+        CookieHandler.setDefault(new CookieManager());                          // Procesa las Cookies
 
         // 1. Extrae la petecion de login
         String page = getPageContent(Reference.LOGIN_INTRANET);                 // Muestra el contenido en texto plano del HTML
-        String postParams = getFormParams(page, dni, pin);// Extrae la petion del texto plano
+        String postParams = getFormParams(page, dni, pin);                      // Extrae la petion del texto plano
         System.out.println(postParams);
 
         // 2. Manda las peticiones de login
         sendPost(postParams);
 
         // 3. Accede a PoliformaT
-        String result = getPageContent(Reference.ASIGNATURAS_POLIFORMAT);            // Muestra el contenido en texto plano del HTML
+        String result = getPageContent(Reference.ASIGNATURAS_POLIFORMAT);       // Muestra el contenido en texto plano del HTML
 
         // 4. Busca las asignaturas
-        getAsignaturas(result);                            // Extrae el nombre de las asignaturas
+        getAsignaturas(result);                                                 // Extrae el nombre de las asignaturas
     }
 
     public ApiPoliformat() {
@@ -160,8 +160,8 @@ public class ApiPoliformat {
         wr.writeBytes(postParams);
         wr.flush();
         wr.close();
-        //int responseCod = conn.getResponseCode();
-        //System.out.println("Respuesta : " + responseCod);
+        int responseCod = conn.getResponseCode();
+        System.out.println("Respuesta : " + responseCod);
 
         conn.setInstanceFollowRedirects(false);
         conn.connect();
@@ -223,7 +223,7 @@ public class ApiPoliformat {
     public void download(String n) throws Exception {
 
         String key      = asignaturas.get(n).getKey();      // ValueKey - Referencia de la asignatura
-        String oldName  = asignaturas.get(n).getValue();    //ValueValue - Nombre orignal de la asignatura
+        String oldName  = asignaturas.get(n).getValue();    // ValueValue - Nombre orignal de la asignatura
         String path     = System.getProperty("user.dir") + File.separator;
         
         // Descargar zip
