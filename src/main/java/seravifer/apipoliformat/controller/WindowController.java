@@ -1,7 +1,10 @@
 package seravifer.apipoliformat.controller;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,11 +16,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import net.lingala.zip4j.exception.ZipException;
 import seravifer.apipoliformat.model.ApiPoliformat;
 import seravifer.apipoliformat.utils.Reference;
 
 import java.io.*;
-import java.nio.file.Paths;
 
 /**
  * Controller for Window.fxml
@@ -27,8 +30,8 @@ public class WindowController {
 
     private Stage stage;
     private AnchorPane root;
-    private ObservableList<String> choiceList;
 
+    private Service<Void> downloadService;
     private ApiPoliformat api;
 
     @FXML
@@ -56,7 +59,7 @@ public class WindowController {
 
         this.api = api;
 
-        choiceList = FXCollections.observableArrayList(api.getAsignaturas().keySet());
+        box.setItems(FXCollections.observableArrayList(api.getAsignaturas().keySet()));
     }
 
     @FXML
@@ -68,14 +71,34 @@ public class WindowController {
             }
         }));
 
-        //logo.setImage();
-        box.setItems(choiceList);
+        logo.setImage(new Image(getClass().getResourceAsStream(Reference.VIEW_PATH + "logo.png")));
+
+        downloadService = new Service<Void>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<Void>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        Platform.runLater(() -> downloadBtn.setDisable(true));
+                        try {
+                            api.download(box.getSelectionModel().getSelectedItem());
+                        } catch (IOException | ZipException e) {
+                            Platform.runLater(() -> downloadBtn.setDisable(false));
+                            e.printStackTrace();
+                        }
+                        Platform.runLater(() -> downloadBtn.setDisable(false));
+                        return null;
+                    }
+                };
+            }
+        };
     }
 
     @FXML
     private void downloadHandler(ActionEvent event) {
         try {
-            api.download(box.getSelectionModel().getSelectedItem());
+            downloadService.reset();
+            downloadService.start();
         } catch (Exception e) {
             System.err.println("Error descargando los archivos.");
             e.printStackTrace();
