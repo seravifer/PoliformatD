@@ -36,8 +36,15 @@ public class LoginController extends Dialog<Pair<String, String>>{
         setResultConverter(type -> {
             if(type == loginType) {
                 return new Pair<>(txtDNI.getText(), txtPIN.getText());
+            } else if(type == ButtonType.CANCEL) {
+                return new Pair<>("", "");
             }
             return null;
         });
+    }
+
+    @FXML
+    void initialize() {
+        setTitle("Login");
     }
 }

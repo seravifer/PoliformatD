@@ -37,6 +37,9 @@ public class ApiPoliformat {
 
     public ApiPoliformat(String dni, String pin) throws Exception {
         asignaturas = new HashMap<>();
+        if(dni.length() == 8) {
+            attemps++;
+        }
 
         CookieHandler.setDefault(new CookieManager());          // Procesa las Cookies
 
