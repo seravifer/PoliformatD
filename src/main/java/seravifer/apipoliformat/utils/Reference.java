@@ -8,5 +8,4 @@ import java.io.File;
  */
 public class Reference {
     public static final String VIEW_PATH = ".." + File.separator + "view" + File.separator;
-    public static final String LOGIN_INTRANET = "https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE";
 }
