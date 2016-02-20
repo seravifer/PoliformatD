@@ -1,5 +1,6 @@
 package seravifer.apipoliformat.controller;
 
+import ch.qos.logback.classic.Logger;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,16 +18,20 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import net.lingala.zip4j.exception.ZipException;
+import org.slf4j.LoggerFactory;
 import seravifer.apipoliformat.model.ApiPoliformat;
 import seravifer.apipoliformat.utils.Reference;
 
 import java.io.*;
+import java.net.URL;
 
 /**
  * Controller for Window.fxml
  * Created by David on 18/02/2016.
  */
 public class WindowController {
+
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(WindowController.class);
 
     private final Stage stage;
     private AnchorPane root;
@@ -48,7 +53,9 @@ public class WindowController {
 
     public WindowController(ApiPoliformat api, Stage stage) {
         this.stage = stage;
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(Reference.VIEW_PATH + "Window.fxml"));
+        URL fxml = Reference.getResourceAsURL("Window.fxml");
+        logger.info("Loading Window.fxml from {}", fxml.toString());
+        FXMLLoader loader = new FXMLLoader(fxml);
         loader.setController(this);
         try {
             root = loader.load();
@@ -78,7 +85,8 @@ public class WindowController {
             }
         }));
 
-        logo.setImage(new Image(getClass().getResourceAsStream(Reference.VIEW_PATH + "logo.png")));
+        logger.info("Loading logo.png");
+        logo.setImage(new Image(Reference.getResourceAsStream("logo.png")));
 
         downloadService = new Service<Void>() {
             @Override

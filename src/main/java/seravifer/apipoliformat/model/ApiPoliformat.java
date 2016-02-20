@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
 
+import ch.qos.logback.classic.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +19,7 @@ import net.lingala.zip4j.exception.*;
 import net.lingala.zip4j.core.*;
 import net.lingala.zip4j.model.*;
 
+import org.slf4j.LoggerFactory;
 import seravifer.apipoliformat.utils.Utils;
 
 /**
@@ -27,6 +29,8 @@ import seravifer.apipoliformat.utils.Utils;
 public class ApiPoliformat {
 
     public static int attemps = 0;
+
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(ApiPoliformat.class);
 
     private List<String> cookies;
     private HttpsURLConnection conn;

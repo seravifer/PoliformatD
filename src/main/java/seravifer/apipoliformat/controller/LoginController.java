@@ -1,12 +1,15 @@
 package seravifer.apipoliformat.controller;
 
+import ch.qos.logback.classic.Logger;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.util.Pair;
+import org.slf4j.LoggerFactory;
 import seravifer.apipoliformat.utils.Reference;
 
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * Login dialog controller. R is the result type.
@@ -14,13 +17,17 @@ import java.io.IOException;
  */
 public class LoginController extends Dialog<Pair<String, String>>{
 
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(LoginController.class);
+
     @FXML
     private PasswordField txtDNI;
     @FXML
     private PasswordField txtPIN;
 
     public LoginController() {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(Reference.VIEW_PATH + "Login.fxml"));
+        URL fxml = Reference.getResourceAsURL("Login.fxml");
+        logger.info("Loading Login.fxml from {}", fxml.toString());
+        FXMLLoader loader = new FXMLLoader(fxml);
         loader.setController(this);
         DialogPane pane = new DialogPane();
         try {
