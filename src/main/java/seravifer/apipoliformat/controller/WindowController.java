@@ -28,11 +28,11 @@ import java.io.*;
  */
 public class WindowController {
 
-    private Stage stage;
+    private final Stage stage;
     private AnchorPane root;
 
     private Service<Void> downloadService;
-    private ApiPoliformat api;
+    private final ApiPoliformat api;
 
     @FXML
     private ChoiceBox<String> box;
@@ -63,8 +63,10 @@ public class WindowController {
 
         this.stage.setResizable(false);
 
-        box.setItems(FXCollections.observableArrayList(api.getSubjects().keySet()));
-
+        ObservableList<String> choiceList = FXCollections.observableArrayList(api.getSubjects().keySet());
+        choiceList.add(Reference.DEFAULT_CHOICE);
+        box.setItems(choiceList);
+        box.getSelectionModel().select(Reference.DEFAULT_CHOICE);
     }
 
     @FXML
@@ -86,7 +88,12 @@ public class WindowController {
                     protected Void call() throws Exception {
                         Platform.runLater(() -> downloadBtn.setDisable(true));
                         try {
-                            api.download(box.getSelectionModel().getSelectedItem());
+                            String selected = box.getSelectionModel().getSelectedItem();
+                            if (!selected.equals(Reference.DEFAULT_CHOICE)) {
+                                api.download(selected);
+                            } else {
+                                System.out.println("Selecciona una asignatura");
+                            }
                         } catch (IOException | ZipException e) {
                             System.out.println("Algo ha fallado");
                             Platform.runLater(() -> downloadBtn.setDisable(false));

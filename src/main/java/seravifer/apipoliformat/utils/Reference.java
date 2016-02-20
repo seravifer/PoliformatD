@@ -8,4 +8,5 @@ import java.io.File;
  */
 public class Reference {
     public static final String VIEW_PATH = ".." + File.separator + "view" + File.separator;
+    public static final String DEFAULT_CHOICE = "------";
 }

@@ -45,6 +45,7 @@ public class ApiPoliformat {
 
         sendPost(dni, pin);                             // Manda las peticiones de login
 
+        //Peta en este método.
         getAsignaturas();                               // Busca las asignaturas
 
     }
@@ -53,7 +54,7 @@ public class ApiPoliformat {
         subjects = new HashMap<>();
     }
 
-    public void setCookies() throws Exception {
+    private void setCookies() throws Exception {
 
         System.err.println("Conexion con cookies...");
 
@@ -78,7 +79,7 @@ public class ApiPoliformat {
 
     }
     
-    public void sendPost(String username, String password) throws Exception {
+    private void sendPost(String username, String password) throws Exception {
 
         System.err.println("Logueando...");
 
@@ -114,10 +115,11 @@ public class ApiPoliformat {
 
     }
     
-    public void getAsignaturas() throws Exception {
+    private void getAsignaturas() throws Exception {
         
         System.err.println("Extrayendo asignaturas...");
 
+        //Sí, justo en esta linea es donde peta. Con un bonito "java.net.SocketTimeoutException: Read timed out"
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
         // Busca los campos del formulario
@@ -182,7 +184,8 @@ public class ApiPoliformat {
 
         // Eliminar zip
         File file = new File( path + n + ".zip" );
-        file.delete();
+        boolean deleted = file.delete();
+        if(!deleted) throw new IOException("El zip de la asignatura no ha sido borrado");
         
         // Cambiar nombre carpeta extraida
         //File dir = new File( path + oldName + File.separator );
@@ -195,7 +198,7 @@ public class ApiPoliformat {
 
     public List<String> getCookies() { return cookies; }
 
-    public void setCookies(List<String> cookies) { this.cookies = cookies; }
+    private void setCookies(List<String> cookies) { this.cookies = cookies; }
 
     public Map<String, String> getSubjects() {
         return subjects;
@@ -203,7 +206,7 @@ public class ApiPoliformat {
 
     public static void main( String[] args ) throws Exception {
 
-        // Modo pruebas
+        // Modo pruebas. (<<No me gusta>> -David.)
         String dni = "";
         String pass = "";
 
