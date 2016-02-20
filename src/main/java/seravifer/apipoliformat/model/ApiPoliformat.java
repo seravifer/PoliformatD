@@ -35,9 +35,8 @@ public class ApiPoliformat {
     public ApiPoliformat(String dni, String pin) throws Exception {
 
         subjects = new HashMap<>();
-        if(dni.length() == 8) {
-            attemps++;
-        }
+
+        if(dni.length()==8) attemps++;
 
         CookieHandler.setDefault(new CookieManager());  // Inicializa las cookies
 
@@ -50,9 +49,7 @@ public class ApiPoliformat {
 
     }
 
-    public ApiPoliformat() {
-        subjects = new HashMap<>();
-    }
+    public ApiPoliformat() { subjects = new HashMap<>(); }
 
     private void setCookies() throws Exception {
 
@@ -176,6 +173,12 @@ public class ApiPoliformat {
         @SuppressWarnings("unchecked")
         List<FileHeader> fileHeaders;
         fileHeaders = zipFile.getFileHeaders();
+
+        String oldName = fileHeaders.iterator().next().getFileName();
+        String oldNameFolder = oldName.substring(0,oldName.indexOf("/"));
+        String newNameFolder = oldName.substring(0,oldName.indexOf("/")).toUpperCase();
+        //System.err.println(oldNameFolder + newNameFolder);
+
         for(FileHeader fileHeader : fileHeaders) {
             System.err.println(fileHeader.getFileName());
             String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "").replace("\"", "");
@@ -188,34 +191,18 @@ public class ApiPoliformat {
         if(!deleted) throw new IOException("El zip de la asignatura no ha sido borrado");
         
         // Cambiar nombre carpeta extraida
-        //File dir = new File( path + oldName + File.separator );
-        //File newDir = new File( dir.getParent() + File.separator + n);
-        //dir.renameTo(newDir);
+        File dir = new File( path + oldNameFolder + File.separator );
+        File newDir = new File( dir.getParent() + File.separator + newNameFolder);
+        dir.renameTo(newDir);
         
         System.out.println("Completado!");
         
     }
 
-    public List<String> getCookies() { return cookies; }
-
     private void setCookies(List<String> cookies) { this.cookies = cookies; }
 
     public Map<String, String> getSubjects() {
         return subjects;
-    }
-
-    public static void main( String[] args ) throws Exception {
-
-        // Modo pruebas. (<<No me gusta>> -David.)
-        String dni = "";
-        String pass = "";
-
-        ApiPoliformat http = new ApiPoliformat();
-        CookieHandler.setDefault(new CookieManager());
-        http.setCookies();
-        http.sendPost(dni, pass);
-        http.getAsignaturas();
-
     }
 
 }
