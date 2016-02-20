@@ -10,7 +10,7 @@ import java.net.URL;
  * Created by David on 18/02/2016.
  */
 public class Reference {
-    public static final String DEFAULT_CHOICE = "------";
+    public static final String DEFAULT_CHOICE = "Elige asignatura";
 
     public static URL getResourceAsURL(String name) {
         return Main.class.getResource("view/" + name);

@@ -48,7 +48,6 @@ public class ApiPoliformat {
 
         sendPost(dni, pin);                             // Manda las peticiones de login
 
-        //Peta en este método.
         getAsignaturas();                               // Busca las asignaturas
 
     }
@@ -108,10 +107,11 @@ public class ApiPoliformat {
         conn.setDoInput(true);
 
         // Envia la peticion
-        DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-        wr.writeBytes(postParams);
-        wr.flush();
-        wr.close();
+        DataOutputStream post = new DataOutputStream(conn.getOutputStream());
+        post.writeBytes(postParams);
+        post.flush();
+        post.close();
+
         new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
     }
@@ -120,7 +120,6 @@ public class ApiPoliformat {
         
         System.err.println("Extrayendo asignaturas...");
 
-        //Sí, justo en esta linea es donde peta. Con un bonito "java.net.SocketTimeoutException: Read timed out"
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
         // Busca los campos del formulario
@@ -129,11 +128,11 @@ public class ApiPoliformat {
 
             for (Element inputElement : inputElements) {
 
-                String oldName = inputElement.ownText();
-                String name = oldName.substring(0, oldName.length()-2);
-                String key = inputElement.getElementsByTag("span").text().substring(1,6);
+                String oldName  = inputElement.ownText();
+                String nexName  = oldName.substring(0, oldName.length()-2);
+                String key      = inputElement.getElementsByTag("span").text().substring(1,6);
 
-                subjects.put(name,key);
+                subjects.put(nexName,key);
 
             }
 
@@ -141,7 +140,7 @@ public class ApiPoliformat {
                 System.err.println( entry.getKey() + " - " + entry.getValue());
             }
 
-        } catch (NullPointerException e) {
+        } catch(NullPointerException e) {
             System.out.println("DNI o contraseña incorrectas");
         }
 
@@ -151,8 +150,8 @@ public class ApiPoliformat {
 
         System.out.println("Descargando asignatura...");
 
-        String key      = subjects.get(n);      // ValueKey - Referencia de la asignatura
-        String path     = System.getProperty("user.dir") + File.separator;
+        String key  = subjects.get(n); // ValueKey - Referencia de la asignatura
+        String path = System.getProperty("user.dir") + File.separator;
         
         // Descargar zip
         URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_" + key + "_" + Utils.getCurso() + "/&siteId=GRA_"+ key + "_" + Utils.getCurso());
@@ -178,10 +177,9 @@ public class ApiPoliformat {
         List<FileHeader> fileHeaders;
         fileHeaders = zipFile.getFileHeaders();
 
-        String oldName = fileHeaders.iterator().next().getFileName();
+        String oldName       = fileHeaders.iterator().next().getFileName();
         String oldNameFolder = oldName.substring(0,oldName.indexOf("/"));
         String newNameFolder = oldName.substring(0,oldName.indexOf("/")).toUpperCase();
-        //System.err.println(oldNameFolder + newNameFolder);
 
         for(FileHeader fileHeader : fileHeaders) {
             System.err.println(fileHeader.getFileName());
@@ -195,7 +193,7 @@ public class ApiPoliformat {
         if(!deleted) throw new IOException("El zip de la asignatura no ha sido borrado");
         
         // Cambiar nombre carpeta extraida
-        File dir = new File( path + oldNameFolder + File.separator );
+        File dir    = new File( path + oldNameFolder + File.separator );
         File newDir = new File( dir.getParent() + File.separator + newNameFolder);
         dir.renameTo(newDir);
         
@@ -205,8 +203,6 @@ public class ApiPoliformat {
 
     private void setCookies(List<String> cookies) { this.cookies = cookies; }
 
-    public Map<String, String> getSubjects() {
-        return subjects;
-    }
+    public Map<String, String> getSubjects() { return subjects; }
 
 }

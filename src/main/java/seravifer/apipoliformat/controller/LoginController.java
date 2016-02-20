@@ -3,6 +3,8 @@ package seravifer.apipoliformat.controller;
 import ch.qos.logback.classic.Logger;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.util.Pair;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,9 @@ public class LoginController extends Dialog<Pair<String, String>>{
         setDialogPane(pane);
         ButtonType loginType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
         pane.getButtonTypes().addAll(loginType, ButtonType.CANCEL);
+
+        //Node loginButton = getDialogPane().lookupButton(loginType);
+        //loginButton.setStyle("-fx-orientation: 0,0;");
 
         setResultConverter(type -> {
             if(type == loginType) {
