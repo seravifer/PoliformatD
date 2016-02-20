@@ -8,7 +8,6 @@ import java.util.Calendar;
  */
 public class Utils {
     public static String getCurso() {
-
         Calendar time = Calendar.getInstance();
 
         int year = time.get(Calendar.YEAR);
@@ -16,6 +15,5 @@ public class Utils {
 
         if(month<9) return Integer.toString(year-1);
         else return Integer.toString(year);
-
     }
 }

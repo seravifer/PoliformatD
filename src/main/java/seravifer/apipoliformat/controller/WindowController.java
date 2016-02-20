@@ -121,8 +121,7 @@ public class WindowController {
             downloadService.reset();
             downloadService.start();
         } catch (Exception e) {
-            System.err.println("Error descargando los archivos");
-            e.printStackTrace();
+            logger.warn("Error descargando los archivos", e);
         }
     }
 

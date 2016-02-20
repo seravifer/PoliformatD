@@ -52,7 +52,7 @@ public class ApiPoliformat {
         getAsignaturas();
     }
 
-    private void setCookies() throws Exception {
+    private void setCookies() throws Exception{
 
         logger.info("Conexion con cookies...");
 
@@ -73,10 +73,10 @@ public class ApiPoliformat {
 
         new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-        setCookies(conn.getHeaderFields().get("Set-Cookie")); // Recoge las cookies
-
+        // Recoge las cookies
+        setCookies(conn.getHeaderFields().get("Set-Cookie"));
     }
-    
+
     private void sendPost(String username, String password) throws Exception {
 
         logger.info("Logueando...");
@@ -121,27 +121,23 @@ public class ApiPoliformat {
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
         // Busca los campos del formulario
-        try {
-            Elements inputElements = doc.getElementsByClass("upv_enlace");
+        Elements inputElements = doc.getElementsByClass("upv_enlace");
 
-            for (Element inputElement : inputElements) {
+        for (Element inputElement : inputElements) {
 
-                String oldName  = inputElement.ownText();
-                String nexName  = oldName.substring(0, oldName.length()-2);
-                String key      = inputElement.getElementsByTag("span").text().substring(1,6);
+            String oldName  = inputElement.ownText();
+            String nexName  = oldName.substring(0, oldName.length()-2);
+            String key      = inputElement.getElementsByTag("span").text().substring(1,6);
 
-                subjects.put(nexName,key);
+            subjects.put(nexName,key);
 
-            }
-
-            for(Map.Entry<String,String> entry : subjects.entrySet()) {
-                logger.info( entry.getKey() + " - " + entry.getValue());
-            }
-
-        } catch (NullPointerException e) {
-            logger.warn("DNI o contraseña incorrectas", e);
-            System.out.println("DNI o contraseña incorrectas");
         }
+
+        for(Map.Entry<String,String> entry : subjects.entrySet()) {
+            logger.info( entry.getKey() + " - " + entry.getValue());
+        }
+
+        if(subjects.isEmpty()) { logger.warn("DNI o contraseña incorrectas!"); }
 
     }
        
@@ -200,7 +196,9 @@ public class ApiPoliformat {
         
     }
 
-    private void setCookies(List<String> cookies) { this.cookies = cookies; }
+    private void setCookies(List<String> cookies) {
+        this.cookies = cookies;
+    }
 
     public Map<String, String> getSubjects() { return subjects; }
 
