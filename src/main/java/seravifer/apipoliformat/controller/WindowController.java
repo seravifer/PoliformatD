@@ -94,7 +94,6 @@ public class WindowController {
                 return new Task<Void>() {
                     @Override
                     protected Void call() throws Exception {
-                        Platform.runLater(() -> downloadBtn.setDisable(true));
                         try {
                             String selected = box.getSelectionModel().getSelectedItem();
                             if (!selected.equals(Reference.DEFAULT_CHOICE)) {
@@ -118,6 +117,7 @@ public class WindowController {
     @FXML
     private void downloadHandler(ActionEvent event) {
         try {
+            downloadBtn.setDisable(true);
             downloadService.reset();
             downloadService.start();
         } catch (Exception e) {

@@ -42,21 +42,19 @@ public class ApiPoliformat {
 
         if(dni.length()==8) attemps++;
 
-        CookieHandler.setDefault(new CookieManager());  // Inicializa las cookies
-
-        setCookies();                                   // Extrae las cookies
-
-        sendPost(dni, pin);                             // Manda las peticiones de login
-
-        getAsignaturas();                               // Busca las asignaturas
-
+        // Inicializa las cookies
+        CookieHandler.setDefault(new CookieManager());
+        // Extrae las cookies
+        setCookies();
+        // Manda las peticiones de login
+        sendPost(dni, pin);
+        // Busca las asignaturas
+        getAsignaturas();
     }
-
-    public ApiPoliformat() { subjects = new HashMap<>(); }
 
     private void setCookies() throws Exception {
 
-        System.err.println("Conexion con cookies...");
+        logger.info("Conexion con cookies...");
 
         URL link = new URL("https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE");
         conn = (HttpsURLConnection) link.openConnection();
@@ -81,7 +79,7 @@ public class ApiPoliformat {
     
     private void sendPost(String username, String password) throws Exception {
 
-        System.err.println("Logueando...");
+        logger.info("Logueando...");
 
         String postParams = "&id=c&estilo=500&vista=MSE&cua=sakai&dni=" + username + "&clau=" + password+ "&=Entrar";
 
@@ -118,7 +116,7 @@ public class ApiPoliformat {
     
     private void getAsignaturas() throws Exception {
         
-        System.err.println("Extrayendo asignaturas...");
+        logger.info("Extrayendo asignaturas...");
 
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
 
@@ -137,10 +135,11 @@ public class ApiPoliformat {
             }
 
             for(Map.Entry<String,String> entry : subjects.entrySet()) {
-                System.err.println( entry.getKey() + " - " + entry.getValue());
+                logger.info( entry.getKey() + " - " + entry.getValue());
             }
 
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
+            logger.warn("DNI o contraseña incorrectas", e);
             System.out.println("DNI o contraseña incorrectas");
         }
 
@@ -182,7 +181,7 @@ public class ApiPoliformat {
         String newNameFolder = oldName.substring(0,oldName.indexOf("/")).toUpperCase();
 
         for(FileHeader fileHeader : fileHeaders) {
-            System.err.println(fileHeader.getFileName());
+            logger.info("Extrayendo {}",fileHeader.getFileName());
             String goodName = fileHeader.getFileName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "").replace("\"", "");
             zipFile.extractFile(fileHeader, path, null, goodName);
         }
