@@ -74,4 +74,8 @@ public class Utils {
             logger.warn("Ha fallado la descompresion de los archivos", e);
         }
     }
+
+    public static double round(double x, int d) {
+        return Math.round(x*Math.pow(10, d))/Math.pow(10, d);
+    }
 }

@@ -26,6 +26,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 import javafx.util.converter.NumberStringConverter;
+import seravifer.apipoliformat.utils.Utils;
 
 import java.io.*;
 import java.net.URL;
@@ -83,7 +84,7 @@ public class WindowController {
         Bindings.bindBidirectional(lblDownloaded.textProperty(), api.sizeProperty(), new NumberStringConverter() {
             @Override
             public String toString(Number value) {
-                return value + " MB";
+                return Utils.round(value.doubleValue(), 2) + " MB";
             }
         });
     }
@@ -128,12 +129,10 @@ public class WindowController {
 
     @FXML
     private void downloadHandler(ActionEvent event) {
-        try {
+        if (!downloadService.isRunning()) {
             downloadBtn.setDisable(true);
             downloadService.reset();
             downloadService.start();
-        } catch (Exception e) {
-            logger.warn("Error descargando los archivos", e);
         }
     }
 

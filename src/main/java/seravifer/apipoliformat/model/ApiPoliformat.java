@@ -143,7 +143,7 @@ public class ApiPoliformat {
         
         // Descargar zip
         URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_" + key + "_" + Utils.getCurso() + "/&siteId=GRA_"+ key + "_" + Utils.getCurso());
-        System.err.println(url);
+        logger.debug(url.toString());
 
         InputStream in       = url.openStream();
         FileOutputStream fos = new FileOutputStream(new File(n + ".zip"));
@@ -155,24 +155,28 @@ public class ApiPoliformat {
         while ( (length = in.read(buffer)) > -1 ) {
             fos.write(buffer, 0, length);
             downloadedSize += length;
-            if (Calendar.getInstance().get(Calendar.SECOND) % 5 == 0) {
-                final int tmp = downloadedSize;
-                Platform.runLater(() -> size.add(tmp/(1024.0 * 1024.0)));
-            }
+            final int tmp = downloadedSize;
+            Platform.runLater(() -> size.set(tmp/(1024.0 * 1024.0 )));
         }
+        final int tmp = downloadedSize;
+        Platform.runLater(() -> size.set((tmp/(1024*1024.0))));
         fos.close();
         in.close();
+        System.out.println("El zip descargado pesa " + Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2) + " MB");
 
         System.out.println("Extrayendo asignatura...");
 
         // Extrae los archivos del zip
-        logger.info("Comenzando la extracción. El zip pesa {} MB", Long.toString(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024)));
+        logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2));
         Utils.unZip( path + n + ".zip" );
 
         // Eliminar zip
         File file = new File( path + n + ".zip" );
         boolean deleted = file.delete();
-        if(!deleted) throw new IOException("El zip de la asignatura no ha sido borrado");
+        if(!deleted) {
+            logger.error("EL ZIP NO HA SIDO BORRADO. SI NO ES BORRARO PUEDE ORIGINAR FALLOS EN FUTURAS DESCARGAS");
+            throw new IOException("El zip de la asignatura no ha sido borrado");
+        }
 
         System.out.println("Completado!");
         logger.info("Extracción con éxito");
