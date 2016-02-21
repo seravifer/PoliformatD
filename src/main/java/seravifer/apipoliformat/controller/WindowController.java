@@ -1,6 +1,11 @@
 package seravifer.apipoliformat.controller;
 
+import seravifer.apipoliformat.model.ApiPoliformat;
+import seravifer.apipoliformat.utils.Reference;
+
 import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,10 +22,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import net.lingala.zip4j.exception.ZipException;
-import org.slf4j.LoggerFactory;
-import seravifer.apipoliformat.model.ApiPoliformat;
-import seravifer.apipoliformat.utils.Reference;
 
 import java.io.*;
 import java.net.URL;
@@ -101,7 +102,7 @@ public class WindowController {
                             } else {
                                 System.out.println("Selecciona una asignatura");
                             }
-                        } catch (IOException | ZipException e) {
+                        } catch (IOException e) {
                             System.out.println("Algo ha fallado");
                             Platform.runLater(() -> downloadBtn.setDisable(false));
                             e.printStackTrace();

@@ -1,10 +1,10 @@
 package seravifer.apipoliformat;
 
+import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.util.Pair;
-import org.slf4j.LoggerFactory;
 import seravifer.apipoliformat.controller.LoginController;
 import seravifer.apipoliformat.controller.WindowController;
 import seravifer.apipoliformat.model.ApiPoliformat;

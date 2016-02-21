@@ -1,21 +1,23 @@
 package seravifer.apipoliformat.controller;
 
+import seravifer.apipoliformat.utils.Reference;
+
 import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
-import javafx.util.Pair;
-import org.slf4j.LoggerFactory;
-import seravifer.apipoliformat.utils.Reference;
 
+import javafx.util.Pair;
 import java.io.IOException;
 import java.net.URL;
 
 /**
- * Login dialog controller. R is the result type.
+ * Login dialog controller.
  * Created by David on 17/02/2016.
  */
-public class LoginController extends Dialog<Pair<String, String>>{
+public class LoginController extends Dialog<Pair<String, String>> {
 
     private static final Logger logger = (Logger) LoggerFactory.getLogger(LoginController.class);
 
@@ -40,9 +42,6 @@ public class LoginController extends Dialog<Pair<String, String>>{
         ButtonType loginType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
         pane.getButtonTypes().addAll(loginType, ButtonType.CANCEL);
 
-        //Node loginButton = getDialogPane().lookupButton(loginType);
-        //loginButton.setStyle("-fx-orientation: 0,0;");
-
         setResultConverter(type -> {
             if(type == loginType) {
                 return new Pair<>(txtDNI.getText(), txtPIN.getText());
@@ -55,6 +54,6 @@ public class LoginController extends Dialog<Pair<String, String>>{
 
     @FXML
     void initialize() {
-        setTitle("Login");
+        setTitle("UPV");
     }
 }
