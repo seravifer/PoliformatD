@@ -1,5 +1,8 @@
 package seravifer.apipoliformat.utils;
 
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,6 +16,8 @@ import java.util.zip.ZipInputStream;
  * Created by David on 17/02/2016.
  */
 public class Utils {
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(Utils.class);
+
     public static String getCurso() {
         Calendar time = Calendar.getInstance();
 
@@ -47,8 +52,7 @@ public class Utils {
 
                 String fileName = zipContent.getName().replace("|", "-").replace("|", "").replace(" /", "/").replace(":", "").replace("\"", "");
                 File newFile = new File(fileName);
-
-                System.err.println(newFile.getAbsoluteFile());
+                logger.info("Extrayendo {}", newFile.getAbsoluteFile());
 
                 new File(newFile.getParent()).mkdirs();
                 FileOutputStream fos = new FileOutputStream(newFile);
@@ -67,7 +71,7 @@ public class Utils {
             zip.close();
 
         } catch(IOException e){
-            e.printStackTrace();
+            logger.warn("Ha fallado la descompresion de los archivos", e);
         }
     }
 }

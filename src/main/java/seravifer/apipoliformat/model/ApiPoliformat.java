@@ -6,17 +6,23 @@ import java.io.*;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
 
+import ch.qos.logback.classic.Logger;
+import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import ch.qos.logback.classic.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -31,11 +37,13 @@ public class ApiPoliformat {
 
     private List<String> cookies;
     private HttpsURLConnection conn;
-    private Map<String, String> subjects; // Mapa de asignaturas <Nombre, Referencia>
+    private Map<String, String> subjects;
+    private DoubleProperty size;
 
     public ApiPoliformat(String dni, String pin) throws Exception {
 
         subjects = new HashMap<>();
+        size = new SimpleDoubleProperty(0);
 
         if(dni.length()==8) attemps++;
 
@@ -140,10 +148,17 @@ public class ApiPoliformat {
         InputStream in       = url.openStream();
         FileOutputStream fos = new FileOutputStream(new File(n + ".zip"));
 
+        Platform.runLater(() -> size.set(0.0));
         int length;
+        int downloadedSize = 0;
         byte[] buffer = new byte[1024];
         while ( (length = in.read(buffer)) > -1 ) {
             fos.write(buffer, 0, length);
+            downloadedSize += length;
+            if (Calendar.getInstance().get(Calendar.SECOND) % 5 == 0) {
+                final int tmp = downloadedSize;
+                Platform.runLater(() -> size.add(tmp/(1024.0 * 1024.0)));
+            }
         }
         fos.close();
         in.close();
@@ -151,6 +166,7 @@ public class ApiPoliformat {
         System.out.println("Extrayendo asignatura...");
 
         // Extrae los archivos del zip
+        logger.info("Comenzando la extracción. El zip pesa {} MB", Long.toString(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024)));
         Utils.unZip( path + n + ".zip" );
 
         // Eliminar zip
@@ -159,7 +175,7 @@ public class ApiPoliformat {
         if(!deleted) throw new IOException("El zip de la asignatura no ha sido borrado");
 
         System.out.println("Completado!");
-        
+        logger.info("Extracción con éxito");
     }
 
     private void setCookies(List<String> cookies) {
@@ -170,4 +186,5 @@ public class ApiPoliformat {
 
     public Map<String, String> getSubjects() { return subjects; }
 
+    public DoubleProperty sizeProperty() { return size; }
 }
