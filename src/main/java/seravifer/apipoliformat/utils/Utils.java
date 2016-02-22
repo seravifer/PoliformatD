@@ -1,15 +1,22 @@
 package seravifer.apipoliformat.utils;
 
 import ch.qos.logback.classic.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.net.URLDecoder;
 
 /**
  * Libreria de utilidades.
@@ -73,6 +80,37 @@ public class Utils {
         } catch(IOException e){
             logger.warn("Ha fallado la descompresion de los archivos", e);
         }
+    }
+
+    public static void getFiles(String url, String parent) throws IOException {
+
+        List<String> asig = new ArrayList<>();
+
+        if( !asig.contains(url) ) {
+
+            Document doc = Jsoup.connect(url).get();
+
+            Elements inputFolder = doc.getElementsByClass("folder");
+            Elements inputFile   = doc.getElementsByClass("file");
+
+            for (Element inputElement : inputFile) {
+
+                String name = inputElement.text();
+                asig.add(parent + name);
+            }
+
+            for (String asigs : asig) {
+                logger.debug("Archivo: {}", asigs);
+            }
+
+            Elements nextLinks = inputFolder.select("a[href]");
+
+            for (Element next : nextLinks) {
+                getFiles(next.absUrl("href"),parent + URLDecoder.decode(next.attr("href"), "UTF-8"));
+            }
+
+        }
+
     }
 
     public static double round(double x, int d) {

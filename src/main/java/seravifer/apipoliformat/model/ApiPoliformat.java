@@ -8,7 +8,6 @@ import java.net.CookieManager;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -55,6 +54,8 @@ public class ApiPoliformat {
         sendPost(dni, pin);
         // Busca las asignaturas
         getAsignaturas();
+
+        Utils.getFiles("https://poliformat.upv.es/access/content/group/GRA_11546_2015/","");
 
     }
 
@@ -151,7 +152,7 @@ public class ApiPoliformat {
         Platform.runLater(() -> size.set(0.0));
         int length;
         int downloadedSize = 0;
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[2048];
         while ( (length = in.read(buffer)) > -1 ) {
             fos.write(buffer, 0, length);
             downloadedSize += length;
