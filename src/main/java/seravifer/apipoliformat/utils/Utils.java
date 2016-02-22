@@ -44,9 +44,8 @@ public class Utils {
             String nameFolder = zipContent.toString().substring(0,zipContent.toString().indexOf("/")).toUpperCase();
 
             File folder = new File(System.getProperty("user.dir") + File.separator + nameFolder);
-            if(!folder.exists()){
-                folder.mkdir();
-            }
+
+            if(!folder.exists()) folder.mkdir();
 
             while(zipContent!=null) {
 
