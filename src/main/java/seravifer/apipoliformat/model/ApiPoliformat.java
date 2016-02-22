@@ -55,8 +55,10 @@ public class ApiPoliformat {
         // Busca las asignaturas
         getAsignaturas();
 
-        Utils.getFiles("https://poliformat.upv.es/access/content/group/GRA_11546_2015/","");
-
+        List<String> lista = Utils.getFiles("https://poliformat.upv.es/access/content/group/GRA_11546_2015/","");
+        for (String s: lista) {
+            logger.debug(s);
+        }
     }
 
     private void setCookies() throws Exception{
@@ -106,9 +108,9 @@ public class ApiPoliformat {
         logger.info("Logeo completado");
 
     }
-    
+
     private void getAsignaturas() throws Exception {
-        
+
         logger.info("Extrayendo asignaturas...");
 
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
@@ -134,14 +136,14 @@ public class ApiPoliformat {
         logger.info("Extración completada");
 
     }
-       
+
     public void download(String n) throws IOException {
 
         System.out.println("Descargando asignatura...");
 
         String key  = subjects.get(n); // ValueKey - Referencia de la asignatura
         String path = System.getProperty("user.dir") + File.separator;
-        
+
         // Descargar zip
         URL url = new URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_" + key + "_" + Utils.getCurso() + "/&siteId=GRA_"+ key + "_" + Utils.getCurso());
         logger.debug(url.toString());

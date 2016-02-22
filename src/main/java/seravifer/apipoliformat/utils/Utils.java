@@ -82,7 +82,7 @@ public class Utils {
         }
     }
 
-    public static void getFiles(String url, String parent) throws IOException {
+    public static List<String> getFiles(String url, String parent) throws IOException {
 
         List<String> asig = new ArrayList<>();
 
@@ -100,16 +100,17 @@ public class Utils {
             }
 
             for (String asigs : asig) {
-                logger.debug("Archivo: {}", asigs);
+                //logger.debug("Archivo: {}", asigs);
             }
 
             Elements nextLinks = inputFolder.select("a[href]");
 
             for (Element next : nextLinks) {
-                getFiles(next.absUrl("href"),parent + URLDecoder.decode(next.attr("href"), "UTF-8"));
+                asig.addAll(getFiles(next.absUrl("href"),parent + URLDecoder.decode(next.attr("href"), "UTF-8")));
             }
 
         }
+            return asig;
 
     }
 
