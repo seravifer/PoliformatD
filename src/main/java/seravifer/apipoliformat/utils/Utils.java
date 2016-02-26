@@ -7,13 +7,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.net.URLDecoder;
@@ -35,7 +32,7 @@ public class Utils {
         else return Integer.toString(year);
     }
 
-    public static void unZip(String zipFile) {
+    public static String unZip(String zipFile) {
 
         byte[] buffer = new byte[1024];
 
@@ -77,44 +74,73 @@ public class Utils {
             zip.closeEntry();
             zip.close();
 
+            return nameFolder;
         } catch(IOException e){
             logger.warn("Ha fallado la descompresion de los archivos", e);
         }
+        return "";
     }
 
-    public static List<String> getFiles(String url, String parent) throws IOException {
+    public static List<String> getFiles(String url, String parent) {
 
         List<String> asig = new ArrayList<>();
 
-        if( !asig.contains(url) ) {
-
+        try {
             Document doc = Jsoup.connect(url).get();
+            Elements input = doc.getElementsByClass("folder");
+            input.addAll(doc.getElementsByClass("file"));
 
-            Elements inputFolder = doc.getElementsByClass("folder");
-            Elements inputFile   = doc.getElementsByClass("file");
-
-            for (Element inputElement : inputFile) {
-
-                String name = inputElement.text();
-                asig.add(parent + name);
+            for (Element e :
+                    input) {
+                if(e.className().equals("folder")) {
+                    asig.addAll(getFiles(e.child(0).absUrl("href"), parent + URLDecoder.decode(e.child(0).attr("href"), "UTF-8")));
+                } else {
+                    asig.add(parent + e.text());
+                }
             }
-
-            for (String asigs : asig) {
-                //logger.debug("Archivo: {}", asigs);
+        } catch (IOException e) {
+            if(e instanceof UnsupportedEncodingException) {
+                logger.warn("Codificacion no soportada", e);
+            } else {
+                logger.warn("No ha sido posible recuperar la lista de archivos del servidor", e);
             }
-
-            Elements nextLinks = inputFolder.select("a[href]");
-
-            for (Element next : nextLinks) {
-                asig.addAll(getFiles(next.absUrl("href"),parent + URLDecoder.decode(next.attr("href"), "UTF-8")));
-            }
-
         }
-            return asig;
+        return asig;
 
     }
 
     public static double round(double x, int d) {
         return Math.round(x*Math.pow(10, d))/Math.pow(10, d);
+    }
+
+    public static void createURLMaps(String s, String parent) {
+        try {
+
+            Map<String, String> nameURL = new HashMap<>();
+            Document doc = Jsoup.connect(s).get();
+            Elements input = doc.getElementsByClass("folder");
+            input.addAll(doc.getElementsByClass("file"));
+
+            for (Element e :
+                    input) {
+                Element folder = e.child(0);
+                if(e.className().equals("folder")) {
+                    if (Files.notExists(Paths.get(parent + folder.text()))) {
+                        Files.createDirectory(Paths.get(parent + folder.text()));
+                    }
+                    nameURL.put(folder.text(), folder.attr("href"));
+                    createURLMaps(folder.absUrl("href"), parent + folder.text() + File.separator);
+                } else {
+
+                    nameURL.put(folder.text(), folder.attr("href"));
+                }
+            }
+
+            File file = new File(parent + "namemap");
+            GsonUtil.writeGson(file, nameURL);
+
+        } catch (IOException e) {
+            logger.warn("El mapa de Nombre-URL no se ha completado.", e);
+        }
     }
 }

@@ -171,7 +171,8 @@ public class ApiPoliformat {
 
         // Extrae los archivos del zip
         logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2));
-        Utils.unZip( path + n + ".zip" );
+        String nameFolder = Utils.unZip(path + n + ".zip");
+        Utils.createURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator);
 
         // Eliminar zip
         File file = new File( path + n + ".zip" );
