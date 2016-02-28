@@ -1,6 +1,7 @@
 package seravifer.apipoliformat.utils;
 
 import ch.qos.logback.classic.Logger;
+import com.google.gson.reflect.TypeToken;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -133,35 +134,34 @@ public class Utils {
 
     /**
      * Crea los mapas json que relacionan los nombres de las carpetas con su URL. Se usa en la comprobacion de archivos en la actualización.
-     * @param s La URL en formato String de la carpeta de la asignatura. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
-     * @param parent En la primera llamada al método debe valer la carpeta donde está descargada la asignatura. Ejemplos: AMA, FOE, TCO, FCO...
+     * @param remoteURL La URL en formato String de la carpeta de la asignatura. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
+     * @param localParent En la primera llamada al método debe valer la carpeta donde está descargada la asignatura. Ejemplos: AMA, FOE, TCO, FCO...
      * */
-    public static void mkRightNameToURLMaps(String s, String parent) {
+    public static void mkRightNameToURLMaps(String remoteURL, String localParent) {
         try {
 
             Map<String, String> nameURL = new HashMap<>();
-            Document doc = Jsoup.connect(s).get();
+            Document doc = Jsoup.connect(remoteURL).get();
             Elements input = doc.getElementsByClass("folder");
             input.addAll(doc.getElementsByClass("file"));
 
+            boolean write = false;
             for (Element e :
                     input) {
-                Element folder = e.child(0);
+                Element fileElement = e.child(0);
+                String fileName = flattenToAscii(fileElement.text());
                 if(e.className().equals("folder")) {
-                    String folderName = flattenToAscii(folder.text());
-                    if (Files.notExists(Paths.get(parent + folderName))) {
-                        Files.createDirectory(Paths.get(parent + folderName));
-                    }
-                    nameURL.put(folder.text(), folder.attr("href"));
-                    mkRightNameToURLMaps(folder.absUrl("href"), parent + folderName + File.separator);
+                    mkRightNameToURLMaps(fileElement.absUrl("href"), localParent + fileName + File.separator);
                 } else {
-
-                    nameURL.put(folder.text(), folder.attr("href"));
+                    write = true;
+                    nameURL.put(fileName, fileElement.absUrl("href"));
                 }
             }
 
-            File file = new File(parent + ".namemap");
-            GsonUtil.writeGson(file, nameURL);
+            if (write) {
+                File file = new File(localParent + ".namemap");
+                GsonUtil.writeGson(file, nameURL);
+            }
 
         } catch (IOException e) {
             logger.warn("El mapa de Nombre-URL no se ha completado.", e);
@@ -176,15 +176,22 @@ public class Utils {
      * */
     public static List<String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
         List<String> urlList = new ArrayList<>();
+        List<String> nowRemoteFiles = getFilesURL(subjectURL);
         try {
             Files.walkFileTree(subjectFolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                Map<String, String> map;
+
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                    map = GsonUtil.leerGson(dir.resolve(".namemap").toFile(), new TypeToken<Map<String, String>>() { }.getType());
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    if (nowRemoteFiles.contains(map.get(file.getFileName().toString()))) { //La key del mapa no lleva las extensiones en algunos archivos.
+                        urlList.add(map.get(file.getFileName().toString()));
+                    }
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -194,6 +201,22 @@ public class Utils {
         return urlList;
     }
 
+    /**
+     * Recibe el nombre de un archivo y lo devuelve sin extensión.
+     * @param name Nombre del archivo.
+     * @return Nombre del archivo sin extension.
+     * */
+    public static String removeExtension(String name) {
+        if(!name.contains(".")) {
+            return name;
+        } else {
+            if(name.startsWith(".") || name.length() - name.lastIndexOf('.') > 6) {
+                return name;
+            } else {
+                return name.substring(0, name.lastIndexOf('.'));
+            }
+        }
+    }
 
     /**
     * Elimina los acentos de un String.
