@@ -8,12 +8,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.net.URLDecoder;
 
 /**
  * Libreria de utilidades.
@@ -22,6 +22,10 @@ import java.net.URLDecoder;
 public class Utils {
     private static final Logger logger = (Logger) LoggerFactory.getLogger(Utils.class);
 
+    /**
+     * Calcula el curso escolar actual.
+     * @return El curso escolar actual en formato String.
+     * */
     public static String getCurso() {
         Calendar time = Calendar.getInstance();
 
@@ -32,8 +36,13 @@ public class Utils {
         else return Integer.toString(year);
     }
 
-    public static String unZip(String zipFile) {
 
+    /**
+     * Extrae los archivos de un fichero Zip.
+     * @param zipFile Representacion de la ruta del archivo Zip en formato String.
+     * @return Devuelve el nombre de la carpeta donde ha sido extraído.
+     * */
+    public static String unZip(String zipFile) {
         byte[] buffer = new byte[1024];
 
         try{
@@ -81,10 +90,13 @@ public class Utils {
         return "";
     }
 
-    public static List<String> getFiles(String url, String parent) {
-
+    /**
+    * Es llamado cuando se actualiza. Agarra los links de todos los archivos de una asignatura. No coge los links de carpetas.
+    * @param url Es la URL de la asignatura como String. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
+    * @return Devuelve una lista con las URL de todos los archivos.
+    */
+    public static List<String> getFilesURL(String url) {
         List<String> asig = new ArrayList<>();
-
         try {
             Document doc = Jsoup.connect(url).get();
             Elements input = doc.getElementsByClass("folder");
@@ -93,9 +105,9 @@ public class Utils {
             for (Element e :
                     input) {
                 if(e.className().equals("folder")) {
-                    asig.addAll(getFiles(e.child(0).absUrl("href"), parent + URLDecoder.decode(e.child(0).attr("href"), "UTF-8")));
+                    asig.addAll(getFilesURL(e.child(0).absUrl("href")));
                 } else {
-                    asig.add(parent + e.text());
+                    asig.add(e.child(0).absUrl("href"));
                 }
             }
         } catch (IOException e) {
@@ -106,14 +118,25 @@ public class Utils {
             }
         }
         return asig;
-
     }
 
+    /**
+    * Redondea un double "x" a otro de "d" decimales.
+    * @param x El double a redondear.
+    * @param d El numero de decimales.
+    * @return Un double x de d decimales.
+    * */
     public static double round(double x, int d) {
         return Math.round(x*Math.pow(10, d))/Math.pow(10, d);
     }
 
-    public static void createURLMaps(String s, String parent) {
+
+    /**
+     * Crea los mapas json que relacionan los nombres de las carpetas con su URL. Se usa en la comprobacion de archivos en la actualización.
+     * @param s La URL en formato String de la carpeta de la asignatura. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
+     * @param parent En la primera llamada al método debe valer la carpeta donde está descargada la asignatura. Ejemplos: AMA, FOE, TCO, FCO...
+     * */
+    public static void mkRightNameToURLMaps(String s, String parent) {
         try {
 
             Map<String, String> nameURL = new HashMap<>();
@@ -125,22 +148,67 @@ public class Utils {
                     input) {
                 Element folder = e.child(0);
                 if(e.className().equals("folder")) {
-                    if (Files.notExists(Paths.get(parent + folder.text()))) {
-                        Files.createDirectory(Paths.get(parent + folder.text()));
+                    String folderName = flattenToAscii(folder.text());
+                    if (Files.notExists(Paths.get(parent + folderName))) {
+                        Files.createDirectory(Paths.get(parent + folderName));
                     }
                     nameURL.put(folder.text(), folder.attr("href"));
-                    createURLMaps(folder.absUrl("href"), parent + folder.text() + File.separator);
+                    mkRightNameToURLMaps(folder.absUrl("href"), parent + folderName + File.separator);
                 } else {
 
                     nameURL.put(folder.text(), folder.attr("href"));
                 }
             }
 
-            File file = new File(parent + "namemap");
+            File file = new File(parent + ".namemap");
             GsonUtil.writeGson(file, nameURL);
 
         } catch (IOException e) {
             logger.warn("El mapa de Nombre-URL no se ha completado.", e);
         }
+    }
+
+    /**
+     * Método que compara el arbol de carpetas que tiene la asignatura en local y la que tiene en el PoliformaT devolviendo como resultado una lista con las URL de los que no están.
+     * @param subjectFolder Carpeta donde se encuentran los archivos de la asignatura en formato Path.
+     * @param subjectURL URL donde se ubican los archivos de la asignatura. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
+     * @return Lista con las URL de los archivos no descargados.
+     * */
+    public static List<String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
+        List<String> urlList = new ArrayList<>();
+        try {
+            Files.walkFileTree(subjectFolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            logger.warn("No ha sido posible comparar el arbol de carpetas local con el arbol remoto.", e);
+        }
+        return urlList;
+    }
+
+
+    /**
+    * Elimina los acentos de un String.
+    * Credits to David Conrad: http://stackoverflow.com/a/15191508
+    * @param string El String a transformar.
+    * @return El String transformado.
+    * */
+    public static String flattenToAscii(String string) {
+        char[] out = new char[string.length()];
+        string = Normalizer.normalize(string, Normalizer.Form.NFD);
+        int j = 0;
+        for (int i = 0, n = string.length(); i < n; ++i) {
+            char c = string.charAt(i);
+            if (c <= '\u007F') out[j++] = c;
+        }
+        return new String(out);
     }
 }

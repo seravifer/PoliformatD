@@ -39,12 +39,16 @@ public class ApiPoliformat {
     private Map<String, String> subjects;
     private DoubleProperty size;
 
+    /**
+     * Inicializa atributos ayudado por los metodos privados.
+     * @param dni DNI del usuario.
+     * @param pin PIN del usuario.
+     * */
     public ApiPoliformat(String dni, String pin) throws Exception {
-
         subjects = new HashMap<>();
         size = new SimpleDoubleProperty(0);
 
-        if(dni.length()==8) attemps++;
+        if (dni.length() == 8) attemps++;
 
         // Inicializa las cookies
         CookieHandler.setDefault(new CookieManager());
@@ -55,14 +59,16 @@ public class ApiPoliformat {
         // Busca las asignaturas
         getAsignaturas();
 
-        List<String> lista = Utils.getFiles("https://poliformat.upv.es/access/content/group/GRA_11546_2015/","");
+        List<String> lista = Utils.getFilesURL("https://poliformat.upv.es/access/content/group/GRA_11546_2015/");
         for (String s: lista) {
             logger.debug(s);
         }
     }
 
+    /**
+     * Inicializa las cookies.
+     * */
     private void setCookies() throws Exception{
-
         logger.info("Conexion con cookies...");
 
         URL link = new URL("https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE");
@@ -86,8 +92,12 @@ public class ApiPoliformat {
         setCookies(conn.getHeaderFields().get("Set-Cookie"));
     }
 
+    /**
+     * Login en PoliformaT
+     * @param username DNI del usuario.
+     * @param password PIN del usuario.
+     * */
     private void sendPost(String username, String password) throws Exception {
-
         logger.info("Logeando...");
 
         String postParams = "&id=c&estilo=500&vista=MSE&cua=sakai&dni=" + username + "&clau=" + password+ "&=Entrar";
@@ -106,11 +116,12 @@ public class ApiPoliformat {
         new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
         logger.info("Logeo completado");
-
     }
 
+    /**
+     * Almacena en subjects todas las asignaturas en curso junto con su nº de referencia del PoliformaT
+     * */
     private void getAsignaturas() throws Exception {
-
         logger.info("Extrayendo asignaturas...");
 
         Document doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get();
@@ -134,11 +145,13 @@ public class ApiPoliformat {
         if(subjects.isEmpty()) { logger.warn("DNI o contraseña incorrectas!"); }
 
         logger.info("Extración completada");
-
     }
 
+    /**
+     * Método que recibe el nombre de una asignatura, la descarga en formato Zip desde el PoliformaT y la descomprime en la carpeta donde se ejecuta el programa.
+     * @param n Nombre de la asignatura. PRECONDICION: Que esté como key en subjects.
+     * */
     public void download(String n) throws IOException {
-
         System.out.println("Descargando asignatura...");
 
         String key  = subjects.get(n); // ValueKey - Referencia de la asignatura
@@ -172,18 +185,26 @@ public class ApiPoliformat {
         // Extrae los archivos del zip
         logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2));
         String nameFolder = Utils.unZip(path + n + ".zip");
-        Utils.createURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator);
+        Utils.mkRightNameToURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator);
 
         // Eliminar zip
         File file = new File( path + n + ".zip" );
         boolean deleted = file.delete();
         if(!deleted) {
-            logger.error("EL ZIP NO HA SIDO BORRADO. SI NO ES BORRARO PUEDE ORIGINAR FALLOS EN FUTURAS DESCARGAS");
+            logger.error("EL ZIP NO HA SIDO BORRADO. SI NO ES BORRARO PUEDE ORIGINAR FALLOS EN FUTURAS DESCARGAS. DEBE BORRARLO MANUALMENTE");
             throw new IOException("El zip de la asignatura no ha sido borrado");
         }
 
         System.out.println("Completado!");
         logger.info("Extracción con éxito");
+    }
+
+    /**
+     * Método que descarga las diferencias entre la carpeta local de la asignatura y la carpeta del PoliformaT. (WIP)
+     * @param n Nombre de la asignatura a actualizar.
+     * */
+    public void update(String n) {
+
     }
 
     private void setCookies(List<String> cookies) {

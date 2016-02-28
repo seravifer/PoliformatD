@@ -11,6 +11,9 @@ import seravifer.apipoliformat.model.ApiPoliformat;
 
 import java.util.Optional;
 
+/**
+ * Clase principal del programa. Punto de entrada para la JVM.
+ * */
 public class Main extends Application{
     private static final Logger logger = (Logger) LoggerFactory.getLogger(Main.class);
 
