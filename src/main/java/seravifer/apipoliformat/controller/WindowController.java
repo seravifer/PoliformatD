@@ -43,6 +43,7 @@ public class WindowController {
     private AnchorPane root;
 
     private Service<Void> downloadService;
+    private Service<Void> updateService;
     private final ApiPoliformat api;
 
     @FXML
@@ -50,6 +51,8 @@ public class WindowController {
 
     @FXML
     private Button downloadBtn;
+    @FXML
+    private Button updateBtn;
 
     @FXML
     private TextArea txtConsole;
@@ -115,11 +118,29 @@ public class WindowController {
                                 System.out.println("Selecciona una asignatura");
                             }
                         } catch (IOException e) {
-                            System.out.println("Algo ha fallado");
+                            logger.warn("Ha fallado el servicio de descarga en algún punto.", e);
                             Platform.runLater(() -> downloadBtn.setDisable(false));
-                            e.printStackTrace();
                         }
                         Platform.runLater(() -> downloadBtn.setDisable(false));
+                        return null;
+                    }
+                };
+            }
+        };
+
+        updateService = new Service<Void>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<Void>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        try {
+                            api.getSubjects().keySet().forEach(api::update);
+                            Platform.runLater(() -> updateBtn.setDisable(false));
+                        } catch (Exception e) {
+                            logger.warn("El servicio de actualización de archivos ha fallado.", e);
+                            updateBtn.setDisable(false);
+                        }
                         return null;
                     }
                 };
@@ -131,6 +152,15 @@ public class WindowController {
     private void downloadHandler(ActionEvent event) {
         if (!downloadService.isRunning()) {
             downloadBtn.setDisable(true);
+            downloadService.reset();
+            downloadService.start();
+        }
+    }
+
+    @FXML
+    private void updateHandler(ActionEvent event) {
+        if(!updateService.isRunning()) {
+            updateBtn.setDisable(true);
             downloadService.reset();
             downloadService.start();
         }

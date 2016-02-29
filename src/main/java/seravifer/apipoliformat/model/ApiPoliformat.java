@@ -58,11 +58,6 @@ public class ApiPoliformat {
         sendPost(dni, pin);
         // Busca las asignaturas
         getAsignaturas();
-
-        List<String> lista = Utils.getFilesURL("https://poliformat.upv.es/access/content/group/GRA_11546_2015/");
-        for (String s: lista) {
-            logger.debug(s);
-        }
     }
 
     /**

@@ -27,9 +27,11 @@ public class Main extends Application{
                 if(login.isPresent()) {
                     Pair<String, String> data = login.get();
                     if(data.getKey().equals("")) { System.exit(0); }
+                    long time = System.currentTimeMillis();
                     http = new ApiPoliformat(data.getKey(), data.getValue());
+                    logger.debug("Se ha tardado en conectarse al PoliformaT {} milisegundos", System.currentTimeMillis() - time);
                 }
-            } while ((http != null ? http.getSubjects().isEmpty() : true) && ApiPoliformat.attemps < 5);
+            } while ((http == null || http.getSubjects().isEmpty()) && ApiPoliformat.attemps < 5);
 
             WindowController windowController = new WindowController(http, primaryStage);
             windowController.show();

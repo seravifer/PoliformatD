@@ -175,7 +175,6 @@ public class Utils {
      * @return Lista con las URL de los archivos no descargados.
      * */
     public static List<String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
-        List<String> urlList = new ArrayList<>();
         List<String> nowRemoteFiles = getFilesURL(subjectURL);
         try {
             Files.walkFileTree(subjectFolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
@@ -183,14 +182,16 @@ public class Utils {
 
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
-                    map = GsonUtil.leerGson(dir.resolve(".namemap").toFile(), new TypeToken<Map<String, String>>() { }.getType());
+                    if (Files.exists(dir.resolve(".namemap"))) {
+                        map = GsonUtil.leerGson(dir.resolve(".namemap").toFile(), new TypeToken<Map<String, String>>() { }.getType());
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
                     if (nowRemoteFiles.contains(map.get(file.getFileName().toString()))) { //La key del mapa no lleva las extensiones en algunos archivos.
-                        urlList.add(map.get(file.getFileName().toString()));
+                        nowRemoteFiles.remove(map.get(file.getFileName().toString()));
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -198,7 +199,7 @@ public class Utils {
         } catch (IOException e) {
             logger.warn("No ha sido posible comparar el arbol de carpetas local con el arbol remoto.", e);
         }
-        return urlList;
+        return nowRemoteFiles;
     }
 
     /**
