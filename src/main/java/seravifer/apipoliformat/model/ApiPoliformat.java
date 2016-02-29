@@ -8,21 +8,21 @@ import java.net.CookieManager;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
 
+import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import org.slf4j.LoggerFactory;
 
 /**
  * Api para PoliformaT de la UPV.
@@ -34,64 +34,23 @@ public class ApiPoliformat {
 
     private static final Logger logger = (Logger) LoggerFactory.getLogger(ApiPoliformat.class);
 
-    private List<String> cookies;
-    private HttpsURLConnection conn;
     private Map<String, String> subjects;
     private DoubleProperty size;
 
-    /**
-     * Inicializa atributos ayudado por los metodos privados.
-     * @param dni DNI del usuario.
-     * @param pin PIN del usuario.
-     * */
     public ApiPoliformat(String dni, String pin) throws Exception {
         subjects = new HashMap<>();
         size = new SimpleDoubleProperty(0);
 
-        if (dni.length() == 8) attemps++;
+        if(dni.length()==8) attemps++;
 
         // Inicializa las cookies
         CookieHandler.setDefault(new CookieManager());
-        // Extrae las cookies
-        setCookies();
-        // Manda las peticiones de login
+        // Manda la petición de login
         sendPost(dni, pin);
         // Busca las asignaturas
         getAsignaturas();
     }
 
-    /**
-     * Inicializa las cookies.
-     * */
-    private void setCookies() throws Exception{
-        logger.info("Conexion con cookies...");
-
-        URL link = new URL("https://intranet.upv.es/pls/soalu/est_intranet.NI_Indiv?P_IDIOMA=c&P_MODO=alumno&P_CUA=sakai&P_VISTA=MSE");
-        conn = (HttpsURLConnection) link.openConnection();
-
-        // Simula un navegador
-        conn.setRequestMethod("GET");
-        conn.setUseCaches(false);
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-        conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        conn.setRequestProperty("Accept-Language", "es,en;q=0.8,gl;q=0.6");
-        if (cookies != null) {
-            for (String cookie : this.cookies) {
-                conn.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
-            }
-        }
-
-        new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-        // Recoge las cookies
-        setCookies(conn.getHeaderFields().get("Set-Cookie"));
-    }
-
-    /**
-     * Login en PoliformaT
-     * @param username DNI del usuario.
-     * @param password PIN del usuario.
-     * */
     private void sendPost(String username, String password) throws Exception {
         logger.info("Logeando...");
 
@@ -99,7 +58,7 @@ public class ApiPoliformat {
 
         URL link = new URL("https://www.upv.es/exp/aute_intranet");
 
-        conn = (HttpsURLConnection) link.openConnection();
+        HttpsURLConnection conn = (HttpsURLConnection) link.openConnection();
         conn.setDoOutput(true);
         conn.setDoInput(true);
 
@@ -111,6 +70,7 @@ public class ApiPoliformat {
         new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
         logger.info("Logeo completado");
+
     }
 
     /**
@@ -125,9 +85,9 @@ public class ApiPoliformat {
 
         for (Element inputElement : inputElements) {
 
-            String oldName  = inputElement.ownText();
-            String nexName  = oldName.substring(0, oldName.length()-2);
-            String key      = inputElement.getElementsByTag("span").text().substring(1,6);
+            String oldName = inputElement.ownText();
+            String nexName = oldName.substring(0, oldName.length()-2);
+            String key     = inputElement.getElementsByTag("span").text().substring(1,6);
 
             subjects.put(nexName,key);
 
@@ -139,7 +99,8 @@ public class ApiPoliformat {
 
         if(subjects.isEmpty()) { logger.warn("DNI o contraseña incorrectas!"); }
 
-        logger.info("Extración completada");
+        logger.info("Extracción completada!");
+
     }
 
     /**
@@ -160,6 +121,7 @@ public class ApiPoliformat {
         FileOutputStream fos = new FileOutputStream(new File(n + ".zip"));
 
         Platform.runLater(() -> size.set(0.0));
+
         int length;
         int downloadedSize = 0;
         byte[] buffer = new byte[2048];
@@ -190,7 +152,7 @@ public class ApiPoliformat {
             throw new IOException("El zip de la asignatura no ha sido borrado");
         }
 
-        System.out.println("Completado!");
+        System.out.println("Descarga completada");
         logger.info("Extracción con éxito");
     }
 
@@ -201,12 +163,6 @@ public class ApiPoliformat {
     public void update(String n) {
 
     }
-
-    private void setCookies(List<String> cookies) {
-        this.cookies = cookies;
-    }
-
-    public List<String> getCookies() { return cookies; }
 
     public Map<String, String> getSubjects() { return subjects; }
 
