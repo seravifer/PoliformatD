@@ -43,6 +43,7 @@ public class GsonUtil {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         Type collectionType = new TypeToken<Map<K, V>>(){}.getType();
         String json = gson.toJson(list, collectionType);
+        json = json.replace("\\u0000", "");
         try {
             FileWriter file = new FileWriter(path);
             file.write(json);

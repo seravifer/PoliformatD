@@ -104,11 +104,12 @@ public class Utils {
 
             for (Element e : input) {
                 Element a = e.child(0);
+                String link = a.absUrl("href");
                 if(e.className().equals("folder")) {
-                    map.putAll(getFilesURL(a.absUrl("href"), parent + flattenToAscii(a.text()) + "/"));
+                    map.putAll(getFilesURL(link, parent + flattenToAscii(a.text()) + "/"));
                 } else {
-                    String extension = a.className().substring(a.className().lastIndexOf(' ') + 1);
-                    map.put(e.child(0).absUrl("href"), parent + flattenToAscii(a.text().contains(extension) ? a.text() : a.text() + "." + extension));
+                    String extension = link.substring(link.lastIndexOf('.') + 1);
+                    map.put(link, parent + flattenToAscii(a.text().contains(extension) ? a.text() : a.text() + "." + extension));
                 }
             }
         } catch (IOException e) {
@@ -147,13 +148,14 @@ public class Utils {
 
             boolean write = false;
             for (Element e : input) {
-                Element fileElement = e.child(0);
-                String fileName = flattenToAscii(fileElement.text());
+                Element a = e.child(0);
+                String link = a.absUrl("href");
                 if(e.className().equals("folder")) {
-                    mkRightNameToURLMaps(fileElement.absUrl("href"), localParent + fileName + File.separator);
+                    mkRightNameToURLMaps(link, localParent + flattenToAscii(a.text()) + File.separator);
                 } else {
                     write = true;
-                    nameURL.put(fileName, fileElement.absUrl("href"));
+                    String extension = link.substring(link.lastIndexOf('.') + 1);
+                    nameURL.put(flattenToAscii(a.text().contains(extension) ? a.text() : a.text() + "." + extension), a.absUrl("href"));
                 }
             }
 
@@ -174,21 +176,17 @@ public class Utils {
      * @return Mapa con las URL de los archivos no descargados y su path teórico en el sistema.
      * */
     public static Map<String, String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
-        Map<String, String> nowRemoteFiles = getFilesURL(subjectURL, "");
+        Map<String, String> nowRemoteFiles = getFilesURL(subjectURL, subjectFolder.toString() + "/");
         try {
             Files.walkFileTree(subjectFolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                Map<String, String> map;
-
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
-                    if (Files.exists(dir.resolve(".namemap"))) {
-                        map = GsonUtil.leerGson(dir.resolve(".namemap").toFile(), new TypeToken<Map<String, String>>() { }.getType());
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    Map<String, String> map;
+                    if (Files.exists(file.getParent().resolve(".namemap"))) {
+                        map = GsonUtil.leerGson(file.getParent().resolve(".namemap").toFile(), new TypeToken<Map<String, String>>() { }.getType());
+                    } else {
+                        map = new HashMap<>();
+                    }
                     if (nowRemoteFiles.containsKey(map.get(file.getFileName().toString()))) {
                         nowRemoteFiles.remove(map.get(file.getFileName().toString()));
                     }

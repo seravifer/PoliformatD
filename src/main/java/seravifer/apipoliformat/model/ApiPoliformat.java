@@ -190,7 +190,7 @@ public class ApiPoliformat {
                 for(Map.Entry<String, String> s : updateList.entrySet()) {
                     URL url = new URL(s.getKey());
                     InputStream downloadStream = url.openStream();
-                    FileOutputStream file = new FileOutputStream(new File(s.getValue()));
+                    FileOutputStream file = new FileOutputStream(new File(Utils.flattenToAscii(s.getValue())));
 
                     int length;
                     byte[] buffer = new byte[2048];

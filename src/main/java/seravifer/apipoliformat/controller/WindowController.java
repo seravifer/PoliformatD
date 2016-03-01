@@ -97,7 +97,7 @@ public class WindowController {
         System.setOut(new PrintStream(new OutputStream() {
             @Override
             public void write(int b) throws IOException {
-                txtConsole.appendText(String.valueOf((char) b));
+                txtConsole.appendText(Utils.flattenToAscii(String.valueOf((char) b)));
             }
         }));
 
