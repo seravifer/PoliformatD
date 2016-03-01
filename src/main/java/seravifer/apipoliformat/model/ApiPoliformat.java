@@ -1,5 +1,7 @@
 package seravifer.apipoliformat.model;
 
+import com.google.gson.reflect.TypeToken;
+import seravifer.apipoliformat.utils.GsonUtil;
 import seravifer.apipoliformat.utils.Utils;
 
 import java.io.*;
@@ -7,7 +9,9 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
@@ -142,10 +146,18 @@ public class ApiPoliformat {
         // Extrae los archivos del zip
         logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2));
         String nameFolder = Utils.unZip(path + n + ".zip");
+        Map<String, String> nameToAcronym = new HashMap<>();
+        Path nameToAcronymPath = Paths.get(".namemap");
+        if(Files.exists(nameToAcronymPath)) {
+            nameToAcronym = GsonUtil.leerGson(nameToAcronymPath.toFile(), new TypeToken<Map<String, String>>(){}.getType());
+            nameToAcronymPath.toFile().delete();
+        }
+        nameToAcronym.put(n, nameFolder);
+        GsonUtil.writeGson(nameToAcronymPath.toFile(), nameToAcronym);
         Utils.mkRightNameToURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator);
 
         // Eliminar zip
-        File file = new File( path + n + ".zip" );
+        File file = new File(path + n + ".zip");
         boolean deleted = file.delete();
         if(!deleted) {
             logger.error("EL ZIP NO HA SIDO BORRADO. SI NO ES BORRARO PUEDE ORIGINAR FALLOS EN FUTURAS DESCARGAS. DEBE BORRARLO MANUALMENTE");
@@ -157,11 +169,44 @@ public class ApiPoliformat {
     }
 
     /**
-     * Método que descarga las diferencias entre la carpeta local de la asignatura y la carpeta del PoliformaT. (WIP)
-     * @param n Nombre de la asignatura a actualizar.
+     * Método que descarga las diferencias entre la carpeta local de la asignatura y la carpeta del PoliformaT.
+     * PRECONDICION: La asignatura ha debido descargarse antes.
      * */
-    public void update(String n) {
+    public void update() {
+        Path nameToAcronymPath = Paths.get(".namemap");
+        try {
+            if(!Files.exists(nameToAcronymPath)) throw new IOException("No existe el mapa de nombre-acronimo de las carpetas de asignatura.");
+        } catch (IOException e) {
+            logger.warn("No se ha encontrado el mapa traductor nombre-acronimo en: " + nameToAcronymPath, e);
+        }
+        Map<String, String> map = GsonUtil.leerGson(nameToAcronymPath.toFile(), new TypeToken<Map<String, String>>(){}.getType());
+        for(Map.Entry<String, String> entry : map.entrySet()) {
+            String name = entry.getKey();
+            String acronym = entry.getValue();
+            try {
+                logger.info("Comienza la actualización de {}", name);
+                System.out.println("Actualizando " + name);
+                Map<String, String> updateList = Utils.compareLocalFolderTreeAndRemote(Paths.get(acronym), "https://poliformat.upv.es/access/content/group/GRA_" + subjects.get(name) + "_" + Utils.getCurso());
+                for(Map.Entry<String, String> s : updateList.entrySet()) {
+                    URL url = new URL(s.getKey());
+                    InputStream downloadStream = url.openStream();
+                    FileOutputStream file = new FileOutputStream(new File(s.getValue()));
 
+                    int length;
+                    byte[] buffer = new byte[2048];
+                    while((length = downloadStream.read(buffer)) > -1) {
+                        file.write(buffer, 0, length);
+                    }
+                    downloadStream.close();
+                    file.close();
+                    logger.info("Descargado {} desde {}", s.getValue(), s.getKey());
+                }
+                logger.info("La actualizacion del {} ha acabado sin problemas", name);
+                System.out.println(name + " actualizado");
+            } catch (IOException e) {
+                logger.warn("No se ha podido actualizar la asignatura: " + name, e);
+            }
+        }
     }
 
     public Map<String, String> getSubjects() { return subjects; }

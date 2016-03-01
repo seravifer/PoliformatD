@@ -135,7 +135,7 @@ public class WindowController {
                     @Override
                     protected Void call() throws Exception {
                         try {
-                            api.getSubjects().keySet().forEach(api::update);
+                            api.update();
                             Platform.runLater(() -> updateBtn.setDisable(false));
                         } catch (Exception e) {
                             logger.warn("El servicio de actualización de archivos ha fallado.", e);
@@ -161,8 +161,8 @@ public class WindowController {
     private void updateHandler(ActionEvent event) {
         if(!updateService.isRunning()) {
             updateBtn.setDisable(true);
-            downloadService.reset();
-            downloadService.start();
+            updateService.reset();
+            updateService.start();
         }
     }
 

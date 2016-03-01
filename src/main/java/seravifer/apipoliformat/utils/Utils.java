@@ -91,23 +91,24 @@ public class Utils {
     }
 
     /**
-    * Es llamado cuando se actualiza. Agarra los links de todos los archivos de una asignatura. No coge los links de carpetas.
+    * Es llamado cuando se actualiza. Agarra los links de todos los archivos de una asignatura y su path teórico en el sistema. No coge los links de carpetas.
     * @param url Es la URL de la asignatura como String. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
-    * @return Devuelve una lista con las URL de todos los archivos.
+    * @return Devuelve un mapa con las URL de los archivos en el PoliformaT y sus nombres reales.
     */
-    public static List<String> getFilesURL(String url) {
-        List<String> asig = new ArrayList<>();
+    public static Map<String, String> getFilesURL(String url, String parent) {
+        Map<String, String> map = new HashMap<>();
         try {
             Document doc = Jsoup.connect(url).get();
             Elements input = doc.getElementsByClass("folder");
             input.addAll(doc.getElementsByClass("file"));
 
-            for (Element e :
-                    input) {
+            for (Element e : input) {
+                Element a = e.child(0);
                 if(e.className().equals("folder")) {
-                    asig.addAll(getFilesURL(e.child(0).absUrl("href")));
+                    map.putAll(getFilesURL(a.absUrl("href"), parent + flattenToAscii(a.text()) + "/"));
                 } else {
-                    asig.add(e.child(0).absUrl("href"));
+                    String extension = a.className().substring(a.className().lastIndexOf(' ') + 1);
+                    map.put(e.child(0).absUrl("href"), parent + flattenToAscii(a.text().contains(extension) ? a.text() : a.text() + "." + extension));
                 }
             }
         } catch (IOException e) {
@@ -117,7 +118,7 @@ public class Utils {
                 logger.warn("No ha sido posible recuperar la lista de archivos del servidor", e);
             }
         }
-        return asig;
+        return map;
     }
 
     /**
@@ -145,8 +146,7 @@ public class Utils {
             input.addAll(doc.getElementsByClass("file"));
 
             boolean write = false;
-            for (Element e :
-                    input) {
+            for (Element e : input) {
                 Element fileElement = e.child(0);
                 String fileName = flattenToAscii(fileElement.text());
                 if(e.className().equals("folder")) {
@@ -171,10 +171,10 @@ public class Utils {
      * Método que compara el arbol de carpetas que tiene la asignatura en local y la que tiene en el PoliformaT devolviendo como resultado una lista con las URL de los que no están.
      * @param subjectFolder Carpeta donde se encuentran los archivos de la asignatura en formato Path.
      * @param subjectURL URL donde se ubican los archivos de la asignatura. Por ejemplo: https://poliformat.upv.es/access/content/group/GRA_11546_2015/
-     * @return Lista con las URL de los archivos no descargados.
+     * @return Mapa con las URL de los archivos no descargados y su path teórico en el sistema.
      * */
-    public static List<String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
-        List<String> nowRemoteFiles = getFilesURL(subjectURL);
+    public static Map<String, String> compareLocalFolderTreeAndRemote(Path subjectFolder, String subjectURL) {
+        Map<String, String> nowRemoteFiles = getFilesURL(subjectURL, "");
         try {
             Files.walkFileTree(subjectFolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                 Map<String, String> map;
@@ -189,7 +189,7 @@ public class Utils {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
-                    if (nowRemoteFiles.contains(map.get(file.getFileName().toString()))) { //La key del mapa no lleva las extensiones en algunos archivos.
+                    if (nowRemoteFiles.containsKey(map.get(file.getFileName().toString()))) {
                         nowRemoteFiles.remove(map.get(file.getFileName().toString()));
                     }
                     return FileVisitResult.CONTINUE;
@@ -199,23 +199,6 @@ public class Utils {
             logger.warn("No ha sido posible comparar el arbol de carpetas local con el arbol remoto.", e);
         }
         return nowRemoteFiles;
-    }
-
-    /**
-     * Recibe el nombre de un archivo y lo devuelve sin extensión.
-     * @param name Nombre del archivo.
-     * @return Nombre del archivo sin extension.
-     * */
-    public static String removeExtension(String name) {
-        if(!name.contains(".")) {
-            return name;
-        } else {
-            if(name.startsWith(".") || name.length() - name.lastIndexOf('.') > 6) {
-                return name;
-            } else {
-                return name.substring(0, name.lastIndexOf('.'));
-            }
-        }
     }
 
     /**
