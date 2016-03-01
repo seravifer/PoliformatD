@@ -187,8 +187,9 @@ public class Utils {
                     } else {
                         map = new HashMap<>();
                     }
-                    if (nowRemoteFiles.containsKey(map.get(file.getFileName().toString()))) {
-                        nowRemoteFiles.remove(map.get(file.getFileName().toString()));
+                    String stdName = trimFileName(file.getFileName().toString());
+                    if (nowRemoteFiles.containsKey(map.get(stdName))) {
+                        nowRemoteFiles.remove(map.get(stdName));
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -214,5 +215,16 @@ public class Utils {
             if (c <= '\u007F') out[j++] = c;
         }
         return new String(out);
+    }
+
+    /**
+     * Quita espacios entre el nombre y la extension del archivo. Ejemplo: "hola .txt" --> "hola.txt"
+     * @param s El String a transformar.
+     * @return El nombre del archivo sin espacios delante y detras.
+     * */
+    public static String trimFileName(String s) {
+        String extension = s.substring(s.lastIndexOf('.'));
+        String name = s.substring(0, s.lastIndexOf('.'));
+        return name.trim() + extension;
     }
 }
