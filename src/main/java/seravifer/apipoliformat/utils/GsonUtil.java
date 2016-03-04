@@ -52,4 +52,19 @@ public class GsonUtil {
             logger.warn("El archivo con la traducción del nombre a URL no ha sido encontrado", e);
         }
     }
+
+    /**
+     * Añadir un mapa a otro existente y si no existe crea uno nuevo.
+     * @param path El archivo donde se va añadir.
+     * @param list El mapa a añadir.
+     * */
+    public static <K, V> void appendGson(File path, Map<K, V> list) {
+        if(!path.exists()) {
+            writeGson(path, list);
+        } else {
+            Map<K, V> map = leerGson(path, new TypeToken<Map<K, V>>(){}.getType());
+            map.putAll(list);
+            writeGson(path, map);
+        }
+    }
 }

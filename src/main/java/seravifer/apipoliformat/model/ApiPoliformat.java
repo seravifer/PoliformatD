@@ -147,13 +147,8 @@ public class ApiPoliformat {
         logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2));
         String nameFolder = Utils.unZip(path + n + ".zip");
         Map<String, String> nameToAcronym = new HashMap<>();
-        Path nameToAcronymPath = Paths.get(".namemap");
-        if(Files.exists(nameToAcronymPath)) {
-            nameToAcronym = GsonUtil.leerGson(nameToAcronymPath.toFile(), new TypeToken<Map<String, String>>(){}.getType());
-            nameToAcronymPath.toFile().delete();
-        }
         nameToAcronym.put(n, nameFolder);
-        GsonUtil.writeGson(nameToAcronymPath.toFile(), nameToAcronym);
+        GsonUtil.appendGson(Paths.get(".namemap").toFile(), nameToAcronym);
         Utils.mkRightNameToURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator);
 
         // Eliminar zip
@@ -190,7 +185,8 @@ public class ApiPoliformat {
                 for(Map.Entry<String, String> s : updateList.entrySet()) {
                     URL url = new URL(s.getKey());
                     InputStream downloadStream = url.openStream();
-                    FileOutputStream file = new FileOutputStream(new File(Utils.flattenToAscii(s.getValue())));
+                    Path filePath = Paths.get(Utils.flattenToAscii(s.getValue()));
+                    FileOutputStream file = new FileOutputStream(new File(filePath.toString()));
 
                     int length;
                     byte[] buffer = new byte[2048];
@@ -199,6 +195,11 @@ public class ApiPoliformat {
                     }
                     downloadStream.close();
                     file.close();
+
+                    Map<String, String> tmpMap = new HashMap<>();
+                    tmpMap.put(filePath.getFileName().toString(), s.getKey());
+                    GsonUtil.appendGson(filePath.getParent().resolve(".namemap").toFile(), tmpMap);
+
                     logger.info("Descargado {} desde {}", s.getValue(), s.getKey());
                 }
                 logger.info("La actualizacion del {} ha acabado sin problemas", name);
