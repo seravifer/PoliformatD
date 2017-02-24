@@ -48,10 +48,7 @@ public class Utils {
 
         try{
 
-            ZipInputStream zip =
-                    new ZipInputStream(
-                            new FileInputStream(zipFile)
-                    );
+            ZipInputStream zip = new ZipInputStream(new FileInputStream(zipFile));
 
             ZipEntry zipContent = zip.getNextEntry();
 
