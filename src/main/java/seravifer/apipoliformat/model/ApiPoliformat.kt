@@ -10,9 +10,6 @@ import java.net.CookieManager
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.HashMap
-import java.util.stream.Collectors
-import javax.net.ssl.HttpsURLConnection
 
 import org.slf4j.LoggerFactory
 import javafx.application.Platform
@@ -20,7 +17,9 @@ import javafx.beans.property.DoubleProperty
 import javafx.beans.property.SimpleDoubleProperty
 
 import org.jsoup.Jsoup
+import seravifer.apipoliformat.round
 import tornadofx.*
+import java.util.*
 
 /**
  * Api para PoliformaT de la UPV.
@@ -31,10 +30,13 @@ object ApiPoliformat {
     var attemps = 0
 
     private val logger = LoggerFactory.getLogger(ApiPoliformat::class.java)
+    private val curso: Int = Calendar.getInstance().run {
+        get(Calendar.YEAR) - if (get(Calendar.MONTH) < 9) 1 else 0
+    }
 
-    val subjects: MutableMap<String, String> = HashMap()
+    val subjects: Map<String, String> = asignaturas
     val sizeProperty: DoubleProperty = SimpleDoubleProperty(0.0)
-    val size by property(sizeProperty)
+    var size by sizeProperty
 
     init {
         // Inicializa las cookies
@@ -51,22 +53,17 @@ object ApiPoliformat {
         logger.info("Logeando...")
         logger.debug("dni: {} / pin: {}", dni, pin)
         if (dni.length == 8) attemps++
-        val postParams = "&id=c&estilo=500&vista=MSE&cua=sakai&dni=$dni&clau=$pin&=Entrar"
+        val response = Jsoup.connect("https://www.upv.es/exp/aute_intranet")
+                .data(mapOf(
+                        "id" to "c",
+                        "estilo" to "500",
+                        "vista" to "MSE",
+                        "cua" to "sakai",
+                        "dni" to dni,
+                        "clau" to pin
+                )).post()
 
-        val link = URL("https://www.upv.es/exp/aute_intranet")
-
-        val conn = link.openConnection() as HttpsURLConnection
-        conn.doOutput = true
-        conn.doInput = true
-
-        val post = DataOutputStream(conn.outputStream)
-        post.writeBytes(postParams)
-        post.flush()
-        post.close()
-
-        val result = BufferedReader(InputStreamReader(conn.inputStream)).lines().collect(Collectors.joining("\n"))
-        logger.debug(result)
-        val logged = Jsoup.parse(result).getElementsByClass("upv_textoerror").first() == null
+        val logged = response.getElementsByClass("upv_textoerror").first() == null
         if (logged) {
             logger.info("Logeo completado")
         } else {
@@ -80,26 +77,16 @@ object ApiPoliformat {
      */
     val asignaturas: Map<String, String>
         get() {
-            logger.info("Extrayendo asignaturas...")
+            logger.info("Buscando asignaturas...")
 
             val doc = Jsoup.connect("https://intranet.upv.es/pls/soalu/sic_asi.Lista_asig").get()
 
-            val inputElements = doc.getElementsByClass("upv_enlace")
+            val mapa = doc.getElementsByClass("upv_enlace")
+                    .map { it.ownText().substring(0, it.ownText().length - 2) to it.getElementsByTag("span").text().substring(1, 6) }
 
-            for (inputElement in inputElements) {
+            mapa.forEach { logger.info("${it.first} - ${it.second}") }
 
-                val oldName = inputElement.ownText()
-                val nexName = oldName.substring(0, oldName.length - 2)
-                val key = inputElement.getElementsByTag("span").text().substring(1, 6)
-
-                subjects.put(nexName, key)
-            }
-
-            for ((key, value) in subjects) {
-                logger.info(key + " - " + value)
-            }
-
-            logger.info("Extracción completada!")
+            logger.info("Búsqueda finalizada")
             return subjects
         }
 
@@ -112,17 +99,17 @@ object ApiPoliformat {
     fun download(n: String) {
         println("Descargando asignatura...")
 
-        val key = subjects[n] // ValueKey - Referencia de la asignatura
+        val id = subjects[n] // ValueKey - Referencia de la asignatura
         val path = System.getProperty("user.dir") + File.separator
 
         // Descargar zip
-        val url = URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_" + key + "_" + Utils.getCurso() + "/&siteId=GRA_" + key + "_" + Utils.getCurso())
+        val url = URL("https://poliformat.upv.es/sakai-content-tool/zipContent.zpc?collectionId=/group/GRA_${id}_$curso/&siteId=GRA_${id}_$curso")
         logger.debug(url.toString())
 
         val input = url.openStream()
         val fos = FileOutputStream(File(n + ".zip"))
 
-        Platform.runLater { sizeProperty.set(0.0) }
+        Platform.runLater { size = 0.0 }
 
         var length: Int = 0
         var downloadedSize = 0
@@ -131,26 +118,26 @@ object ApiPoliformat {
             fos.write(buffer, 0, length)
             downloadedSize += length
             val tmp = downloadedSize
-            Platform.runLater { sizeProperty.set(tmp / (1024.0 * 1024.0)) }
+            Platform.runLater { size = tmp / (1024.0 * 1024.0) }
         }
         val tmp = downloadedSize
-        Platform.runLater { sizeProperty.set(tmp / (1024 * 1024.0)) }
+        Platform.runLater { size = tmp / (1024 * 1024.0) }
         fos.close()
         input.close()
-        println("El zip descargado pesa " + Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2) + " MB")
+        println("El zip descargado pesa ${(Files.size(Paths.get("$path$n.zip")) / (1024 * 1024.0)).round(2)} MB")
 
         println("Extrayendo asignatura...")
 
         // Extrae los archivos del zip
-        logger.info("Comenzando la extracción. El zip pesa {} MB", Utils.round(Files.size(Paths.get(path + n + ".zip")) / (1024 * 1024.0), 2))
-        val nameFolder = Utils.unZip(path + n + ".zip")
+        logger.info("Comenzando la extracción. El zip pesa ${(Files.size(Paths.get("$path$n.zip")) / (1024 * 1024.0)).round(2)} MB")
+        val nameFolder = Utils.unZip("$path$n.zip")
         val nameToAcronym = HashMap<String, String>()
         nameToAcronym.put(n, nameFolder)
         GsonUtil.appendGson(Paths.get(".namemap").toFile(), nameToAcronym)
-        Utils.mkRightNameToURLMaps("https://poliformat.upv.es/access/content/group/GRA_" + key + "_" + Utils.getCurso(), nameFolder + File.separator)
+        Utils.mkRightNameToURLMaps("https://poliformat.upv.es/access/content/group/GRA_${id}_$curso", nameFolder + File.separator)
 
         // Eliminar zip
-        val file = File(path + n + ".zip")
+        val file = File("$path$n.zip")
         val deleted = file.delete()
         if (!deleted) {
             logger.error("EL ZIP NO HA SIDO BORRADO. SI NO ES BORRARO PUEDE ORIGINAR FALLOS EN FUTURAS DESCARGAS. DEBE BORRARLO MANUALMENTE")
@@ -179,7 +166,7 @@ object ApiPoliformat {
             try {
                 logger.info("Comienza la actualización de {}", name)
                 println("Actualizando " + name)
-                val updateList = Utils.compareLocalFolderTreeAndRemote(Paths.get(acronym), "https://poliformat.upv.es/access/content/group/GRA_" + subjects[name] + "_" + Utils.getCurso())
+                val updateList = Utils.compareLocalFolderTreeAndRemote(Paths.get(acronym), "https://poliformat.upv.es/access/content/group/GRA_" + subjects[name] + "_" + curso)
                 for ((key, value) in updateList) {
                     val url = URL(key)
                     val downloadStream = url.openStream()
